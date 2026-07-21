@@ -1,54 +1,62 @@
-import {Button} from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
+type ReviewRating = "AGAIN" | "HARD" | "GOOD" | "EASY";
 
-export default function ReviewButtons(){
+type ReviewButtonsProps = {
+  disabled?: boolean;
+  onReview: (rating: ReviewRating) => void;
+};
 
-return (
+export default function ReviewButtons({
+  disabled = false,
+  onReview,
+}: ReviewButtonsProps) {
+  return (
+    <div
+      className="
+        grid
+        grid-cols-4
+        gap-2
+        mt-6
+      "
+    >
+      <Button
+        variant="outline"
+        disabled={disabled}
+        onClick={() => onReview("AGAIN")}
+      >
+        Again
+      </Button>
 
-<div className="
-grid
-grid-cols-4
-gap-2
-mt-6
-">
+      <Button
+        variant="outline"
+        disabled={disabled}
+        onClick={() => onReview("HARD")}
+      >
+        Hard
+      </Button>
 
+      <Button
+        className="
+          bg-emerald-500
+          hover:bg-emerald-600
+        "
+        disabled={disabled}
+        onClick={() => onReview("GOOD")}
+      >
+        Good
+      </Button>
 
-<Button
-variant="outline"
->
-Again
-</Button>
-
-
-<Button
-variant="outline"
->
-Hard
-</Button>
-
-
-<Button
-className="
-bg-emerald-500
-hover:bg-emerald-600
-"
->
-Good
-</Button>
-
-
-<Button
-className="
-bg-indigo-600
-hover:bg-indigo-700
-"
->
-Easy
-</Button>
-
-
-</div>
-
-)
-
+      <Button
+        className="
+          bg-indigo-600
+          hover:bg-indigo-700
+        "
+        disabled={disabled}
+        onClick={() => onReview("EASY")}
+      >
+        Easy
+      </Button>
+    </div>
+  );
 }

@@ -1,34 +1,12 @@
 import AppShell from "@/components/app-shell";
 import LearningHeader from "@/components/learning-header";
-import Flashcard from "@/components/flashcard";
-import ReviewButtons from "@/components/review-buttons";
+import LearnClient from "@/components/learn-client";
 
-
-export default function LearnPage(){
-
-return (
-
-<AppShell>
-
-
-<LearningHeader/>
-
-
-<div className="
-mt-8
-">
-
-<Flashcard/>
-
-
-<ReviewButtons/>
-
-
-</div>
-
-
-</AppShell>
-
-)
-
+export default function LearnPage() {
+  return (
+    <AppShell>
+      <LearningHeader />
+      <LearnClient />
+    </AppShell>
+  );
 }
