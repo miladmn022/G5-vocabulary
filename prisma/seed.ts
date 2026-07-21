@@ -11,6 +11,9 @@ async function main() {
     create: {
       email: "demo@g5.local",
       name: "Demo User",
+      passwordHash: "demo-password-hash",
+      role: "ADMIN",
+      isActive: true,
     },
   });
 
