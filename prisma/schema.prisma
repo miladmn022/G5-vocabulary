@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum ReviewRating {
+  AGAIN
+  HARD
+  GOOD
+  EASY
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userWords     UserWord[]
+  reviewHistory ReviewHistory[]
+}
+
+model Word {
+  id        String   @id @default(cuid())
+  text      String   @unique
+  meaning   String
+  synonyms  String?
+  antonyms  String?
+  example   String?
+  level     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userWords     UserWord[]
+  reviewHistory ReviewHistory[]
+}
+
+model UserWord {
+  id             String   @id @default(cuid())
+  userId         String
+  wordId         String
+
+  g5Level        Float    @default(0)
+  easeFactor     Float    @default(2.5)
+  interval       Int      @default(0)
+  nextReviewAt   DateTime @default(now())
+  lastReviewedAt DateTime?
+  reviewCount    Int      @default(0)
+  correctCount   Int      @default(0)
+  wrongCount     Int      @default(0)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word           Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  reviews        ReviewHistory[]
+
+  @@unique([userId, wordId])
+  @@index([userId])
+  @@index([wordId])
+  @@index([nextReviewAt])
+}
+
+model ReviewHistory {
+  id               String       @id @default(cuid())
+  userId           String
+  wordId           String
+  userWordId       String
+
+  rating           ReviewRating
+  previousLevel    Float
+  nextLevel        Float
+  previousInterval Int
+  nextInterval     Int
+
+  reviewedAt       DateTime     @default(now())
+
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word             Word         @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  userWord         UserWord     @relation(fields: [userWordId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([wordId])
+  @@index([userWordId])
+  @@index([reviewedAt])
+}
