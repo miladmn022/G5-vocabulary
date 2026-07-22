@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Flashcard from "@/components/flashcard";
 import ReviewButtons from "@/components/review-buttons";
-import { Button } from "@/components/ui/button";
 
 type ReviewRating = "AGAIN" | "HARD" | "GOOD" | "EASY";
 
@@ -176,17 +175,25 @@ export default function LearnClient() {
           Come back later when your next review is ready.
         </p>
 
-        <Button
-          asChild
+        <Link
+          href="/dashboard"
           className="
             mt-6
+            inline-flex
+            items-center
+            justify-center
             rounded-xl
+            bg-indigo-600
+            px-4
+            py-3
+            text-sm
+            font-medium
+            text-white
+            hover:bg-indigo-700
           "
         >
-          <Link href="/dashboard">
-            Back to dashboard
-          </Link>
-        </Button>
+          Back to dashboard
+        </Link>
       </div>
     );
   }
