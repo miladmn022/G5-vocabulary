@@ -170,6 +170,8 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    const form = event.currentTarget;
+
     setMessage("");
     setError("");
     setProgress("");
@@ -213,7 +215,7 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
 
       setFile(null);
       setRows([]);
-      event.currentTarget.reset();
+      form.reset();
     } catch (importError) {
       setError(
         importError instanceof Error
