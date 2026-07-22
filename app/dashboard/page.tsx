@@ -4,6 +4,7 @@ import DashboardHeader from "@/components/dashboard-header";
 import StatCard from "@/components/stat-card";
 import StartLearningCard from "@/components/start-learning-card";
 import BottomNav from "@/components/bottom-nav";
+import LogoutButton from "@/components/logout-button";
 import { getSession } from "@/lib/session";
 import { getDashboardStats } from "@/lib/dashboard-stats";
 
@@ -20,7 +21,17 @@ export default async function DashboardPage() {
 
   return (
     <AppShell>
-      <DashboardHeader />
+      <div
+        className="
+          flex
+          items-start
+          justify-between
+          gap-4
+        "
+      >
+        <DashboardHeader />
+        <LogoutButton />
+      </div>
 
       <StartLearningCard />
 
