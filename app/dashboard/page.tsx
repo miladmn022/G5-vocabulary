@@ -5,6 +5,7 @@ import StatCard from "@/components/stat-card";
 import StartLearningCard from "@/components/start-learning-card";
 import BottomNav from "@/components/bottom-nav";
 import { getSession } from "@/lib/session";
+import { getDashboardStats } from "@/lib/dashboard-stats";
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -12,6 +13,10 @@ export default async function DashboardPage() {
   if (!session) {
     redirect("/login");
   }
+
+  const stats = await getDashboardStats({
+    userId: session.user.id,
+  });
 
   return (
     <AppShell>
@@ -29,22 +34,22 @@ export default async function DashboardPage() {
       >
         <StatCard
           title="Today's Goal"
-          value="10"
+          value={`${stats.reviewedToday}/${stats.dailyGoal}`}
         />
 
         <StatCard
           title="Learned"
-          value="8"
+          value={`${stats.learnedWords}`}
         />
 
         <StatCard
-          title="Streak"
-          value="5 🔥"
+          title="Due Now"
+          value={`${stats.dueWords}`}
         />
 
         <StatCard
           title="Total Words"
-          value="240"
+          value={`${stats.totalWords}`}
         />
       </div>
 
