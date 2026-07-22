@@ -229,10 +229,31 @@ export async function POST(request: Request) {
     const importedCount = importedWords.length;
     const skippedCount = 0;
 
+    const levelSummary = importedWords.reduce(
+      (summary, word) => {
+        if (word.level <= 1) {
+          summary.beginner += 1;
+        } else if (word.level === 2) {
+          summary.intermediate += 1;
+        } else {
+          summary.advanced += 1;
+        }
+
+        return summary;
+      },
+      {
+        beginner: 0,
+        intermediate: 0,
+        advanced: 0,
+      }
+    );
+
     return NextResponse.json({
       importedCount,
       skippedCount,
+      processedCount: rows.length,
       scope: isGlobalImport ? "global" : "personal",
+      levelSummary,
     });
   } catch (error) {
     console.error("Import words API error:", error);

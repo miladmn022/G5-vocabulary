@@ -86,8 +86,12 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
       }
 
       setError("");
+      const summary = data.levelSummary
+        ? ` Beginner: ${data.levelSummary.beginner}, Intermediate: ${data.levelSummary.intermediate}, Advanced: ${data.levelSummary.advanced}.`
+        : "";
+
       setMessage(
-        `Imported ${data.importedCount} words as ${data.scope}.`
+        `Imported ${data.importedCount} of ${data.processedCount ?? rowCount ?? data.importedCount} rows as ${data.scope}.${summary}`
       );
 
       setFile(null);
@@ -185,7 +189,7 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
 
           {rowCount !== null ? (
             <p className="mt-2 text-sm text-gray-500">
-              Detected rows: {rowCount}
+              Detected rows: {rowCount} / Max {MAX_IMPORT_ROWS}
             </p>
           ) : null}
         </div>

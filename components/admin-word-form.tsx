@@ -9,7 +9,7 @@ export default function AdminWordForm() {
   const [synonyms, setSynonyms] = useState("");
   const [antonyms, setAntonyms] = useState("");
   const [example, setExample] = useState("");
-  const [level, setLevel] = useState(0);
+  const [level, setLevel] = useState(1);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");

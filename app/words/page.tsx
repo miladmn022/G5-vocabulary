@@ -10,6 +10,7 @@ import {
   getWordCounts,
 } from "@/lib/dashboard-words";
 import { prisma } from "@/lib/prisma";
+import { getWordLevelLabel } from "@/lib/word-level";
 
 type WordsPageProps = {
   searchParams: Promise<{
@@ -208,6 +209,22 @@ export default async function WordsPage({
               <p className="mt-1 text-sm text-gray-500">
                 {word.meaning}
               </p>
+
+              <span
+                className="
+                  mt-3
+                  inline-flex
+                  rounded-full
+                  bg-indigo-50
+                  px-3
+                  py-1
+                  text-xs
+                  font-medium
+                  text-indigo-700
+                "
+              >
+                {getWordLevelLabel(word.level)}
+              </span>
 
               <Link
                 href={`/words/${word.id}`}
