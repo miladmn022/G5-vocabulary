@@ -5,9 +5,8 @@ import StatCard from "@/components/stat-card";
 import StartLearningCard from "@/components/start-learning-card";
 import BottomNav from "@/components/bottom-nav";
 import LogoutButton from "@/components/logout-button";
-import AdminLinks from "@/components/admin-links";
-import ImportLinkCard from "@/components/import-link-card";
-import InstallLinkCard from "@/components/install-link-card";
+import InstallButton from "@/components/install-button";
+import DashboardActionGrid from "@/components/dashboard-action-grid";
 import { getSession } from "@/lib/session";
 import { getDashboardStats } from "@/lib/dashboard-stats";
 
@@ -36,16 +35,16 @@ export default async function DashboardPage() {
           name={session.user.name}
           email={session.user.email}
         />
-        <LogoutButton />
+
+        <div className="flex items-center gap-2">
+          <InstallButton />
+          <LogoutButton />
+        </div>
       </div>
 
       <StartLearningCard />
 
-      <ImportLinkCard />
-
-      <InstallLinkCard />
-
-      {session.user.role === "ADMIN" ? <AdminLinks /> : null}
+      <DashboardActionGrid isAdmin={session.user.role === "ADMIN"} />
 
       <div
         className="
