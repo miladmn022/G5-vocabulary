@@ -29,7 +29,10 @@ export default async function DashboardPage() {
           gap-4
         "
       >
-        <DashboardHeader />
+        <DashboardHeader
+          name={session.user.name}
+          email={session.user.email}
+        />
         <LogoutButton />
       </div>
 
