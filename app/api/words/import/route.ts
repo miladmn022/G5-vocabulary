@@ -1,0 +1,244 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/session";
+
+type CsvWordRow = {
+  text: string;
+  meaning: string;
+  synonyms: string;
+  antonyms: string;
+  example: string;
+  level: number;
+};
+
+function parseCsvLine(line: string) {
+  const values: string[] = [];
+  let current = "";
+  let insideQuotes = false;
+
+  for (let index = 0; index < line.length; index++) {
+    const char = line[index];
+    const nextChar = line[index + 1];
+
+    if (char === '"' && insideQuotes && nextChar === '"') {
+      current += '"';
+      index++;
+      continue;
+    }
+
+    if (char === '"') {
+      insideQuotes = !insideQuotes;
+      continue;
+    }
+
+    if (char === "," && !insideQuotes) {
+      values.push(current.trim());
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  values.push(current.trim());
+
+  return values;
+}
+
+function parseCsv(content: string) {
+  const cleanContent = content.replace(/^\uFEFF/, "");
+  const lines = cleanContent
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length < 2) {
+    throw new Error("CSV file has no rows.");
+  }
+
+  const headers = parseCsvLine(lines[0]).map((header) =>
+    header.trim().toLowerCase()
+  );
+
+  const requiredHeaders = ["text", "meaning"];
+
+  for (const header of requiredHeaders) {
+    if (!headers.includes(header)) {
+      throw new Error(`Missing required column: ${header}`);
+    }
+  }
+
+  const rows: CsvWordRow[] = [];
+
+  for (const line of lines.slice(1)) {
+    const values = parseCsvLine(line);
+
+    const getValue = (name: string) => {
+      const index = headers.indexOf(name);
+      return index >= 0 ? values[index]?.trim() || "" : "";
+    };
+
+    const text = getValue("text");
+    const meaning = getValue("meaning");
+
+    if (!text || !meaning) {
+      continue;
+    }
+
+    const levelValue = Number(getValue("level") || 0);
+    const level = Number.isFinite(levelValue)
+      ? Math.max(0, Math.min(5, levelValue))
+      : 0;
+
+    rows.push({
+      text,
+      meaning,
+      synonyms: getValue("synonyms"),
+      antonyms: getValue("antonyms"),
+      example: getValue("example"),
+      level,
+    });
+  }
+
+  return rows;
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await getSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const formData = await request.formData();
+    const file = formData.get("file");
+    const scope = formData.get("scope");
+
+    if (!(file instanceof File)) {
+      return NextResponse.json(
+        { error: "CSV file is required" },
+        { status: 400 }
+      );
+    }
+
+    const isGlobalImport =
+      session.user.role === "ADMIN" && scope === "global";
+
+    const content = await file.text();
+    const rows = parseCsv(content);
+
+    if (rows.length === 0) {
+      return NextResponse.json(
+        { error: "No valid rows found. Text and meaning are required." },
+        { status: 400 }
+      );
+    }
+
+    let importedCount = 0;
+    let skippedCount = 0;
+
+    for (const row of rows) {
+      const word = await prisma.word.upsert({
+        where: {
+          text: row.text,
+        },
+        update: {
+          meaning: row.meaning,
+          synonyms: row.synonyms,
+          antonyms: row.antonyms,
+          example: row.example,
+          level: row.level,
+          isGlobal: isGlobalImport,
+          createdByUserId: session.user.id,
+          source: "EXCEL_IMPORT",
+        },
+        create: {
+          text: row.text,
+          meaning: row.meaning,
+          synonyms: row.synonyms,
+          antonyms: row.antonyms,
+          example: row.example,
+          level: row.level,
+          isGlobal: isGlobalImport,
+          createdByUserId: session.user.id,
+          source: "EXCEL_IMPORT",
+        },
+      });
+
+      if (isGlobalImport) {
+        const users = await prisma.user.findMany({
+          where: {
+            isActive: true,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        await Promise.all(
+          users.map((user) =>
+            prisma.userWord.upsert({
+              where: {
+                userId_wordId: {
+                  userId: user.id,
+                  wordId: word.id,
+                },
+              },
+              update: {},
+              create: {
+                userId: user.id,
+                wordId: word.id,
+                g5Level: 0,
+                easeFactor: 2.5,
+                interval: 0,
+                nextReviewAt: new Date(),
+              },
+            })
+          )
+        );
+      } else {
+        await prisma.userWord.upsert({
+          where: {
+            userId_wordId: {
+              userId: session.user.id,
+              wordId: word.id,
+            },
+          },
+          update: {},
+          create: {
+            userId: session.user.id,
+            wordId: word.id,
+            g5Level: 0,
+            easeFactor: 2.5,
+            interval: 0,
+            nextReviewAt: new Date(),
+          },
+        });
+      }
+
+      importedCount++;
+    }
+
+    return NextResponse.json({
+      importedCount,
+      skippedCount,
+      scope: isGlobalImport ? "global" : "personal",
+    });
+  } catch (error) {
+    console.error("Import words API error:", error);
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong",
+      },
+      { status: 500 }
+    );
+  }
+}
