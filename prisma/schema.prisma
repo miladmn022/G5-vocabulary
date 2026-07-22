@@ -19,6 +19,12 @@ enum UserRole {
   USER
 }
 
+enum WordSource {
+  MANUAL
+  EXCEL_IMPORT
+  DEFAULT_SEED
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -34,18 +40,25 @@ model User {
 }
 
 model Word {
-  id        String   @id @default(cuid())
-  text      String   @unique
-  meaning   String
-  synonyms  String?
-  antonyms  String?
-  example   String?
-  level     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String     @id @default(cuid())
+  text            String     @unique
+  meaning         String
+  synonyms        String?
+  antonyms        String?
+  example         String?
+  level           Int        @default(0)
+  isGlobal        Boolean    @default(true)
+  createdByUserId String?
+  source          WordSource @default(MANUAL)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   userWords     UserWord[]
   reviewHistory ReviewHistory[]
+
+  @@index([isGlobal])
+  @@index([createdByUserId])
+  @@index([source])
 }
 
 model UserWord {

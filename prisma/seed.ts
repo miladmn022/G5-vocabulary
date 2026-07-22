@@ -78,8 +78,16 @@ async function main() {
         antonyms: word.antonyms,
         example: word.example,
         level: word.level,
+        isGlobal: true,
+        createdByUserId: user.id,
+        source: "DEFAULT_SEED",
       },
-      create: word,
+      create: {
+        ...word,
+        isGlobal: true,
+        createdByUserId: user.id,
+        source: "DEFAULT_SEED",
+      },
     });
 
     await prisma.userWord.upsert({
