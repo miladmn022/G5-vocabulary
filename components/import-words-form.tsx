@@ -8,12 +8,45 @@ type ImportWordsFormProps = {
   isAdmin: boolean;
 };
 
+const MAX_IMPORT_ROWS = 1000;
+
+function countCsvRows(content: string) {
+  return content
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean).length - 1;
+}
+
 export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [rowCount, setRowCount] = useState<number | null>(null);
   const [scope, setScope] = useState<"personal" | "global">("personal");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  async function handleFileChange(selectedFile: File | null) {
+    setFile(selectedFile);
+    setRowCount(null);
+    setMessage("");
+    setError("");
+
+    if (!selectedFile) {
+      return;
+    }
+
+    const content = await selectedFile.text();
+    const count = countCsvRows(content);
+
+    setRowCount(count);
+
+    if (count > MAX_IMPORT_ROWS) {
+      setError(
+        `This file has ${count} rows. Please import up to ${MAX_IMPORT_ROWS} rows at a time.`
+      );
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,6 +56,13 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
 
     if (!file) {
       setError("Please choose a CSV file.");
+      return;
+    }
+
+    if (rowCount !== null && rowCount > MAX_IMPORT_ROWS) {
+      setError(
+        `This file has ${rowCount} rows. Please split it into smaller files.`
+      );
       return;
     }
 
@@ -51,9 +91,10 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
       );
 
       setFile(null);
+      setRowCount(null);
       event.currentTarget.reset();
     } catch {
-      setError("Could not connect to import API.");
+      setError("Could not connect to import API. Please try a smaller file.");
     } finally {
       setLoading(false);
     }
@@ -72,24 +113,17 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
       "
     >
       <div>
-        <h2
-          className="
-            text-lg
-            font-bold
-            text-gray-900
-          "
-        >
+        <h2 className="text-lg font-bold text-gray-900">
           Import CSV
         </h2>
 
-        <p
-          className="
-            mt-2
-            text-sm
-            text-gray-500
-          "
-        >
-Download the template, fill it in Excel, save it as CSV, then upload it here. Regular users import personal words only. Admins can import global words for everyone.
+        <p className="mt-2 text-sm text-gray-500">
+          Download the template, fill it in Excel, save it as CSV, then upload it here.
+          Regular users import personal words only. Admins can import global words for everyone.
+        </p>
+
+        <p className="mt-2 text-sm text-amber-600">
+          Import limit: {MAX_IMPORT_ROWS} rows per file.
         </p>
       </div>
 
@@ -116,10 +150,7 @@ Download the template, fill it in Excel, save it as CSV, then upload it here. Re
 
       <form
         onSubmit={handleSubmit}
-        className="
-          mt-6
-          space-y-4
-        "
+        className="mt-6 space-y-4"
       >
         <div>
           <label className="text-sm font-medium">CSV file</label>
@@ -128,7 +159,7 @@ Download the template, fill it in Excel, save it as CSV, then upload it here. Re
             type="file"
             accept=".csv,text/csv"
             onChange={(event) =>
-              setFile(event.target.files?.[0] || null)
+              handleFileChange(event.target.files?.[0] || null)
             }
             className="
               mt-2
@@ -151,6 +182,12 @@ Download the template, fill it in Excel, save it as CSV, then upload it here. Re
               file:text-indigo-700
             "
           />
+
+          {rowCount !== null ? (
+            <p className="mt-2 text-sm text-gray-500">
+              Detected rows: {rowCount}
+            </p>
+          ) : null}
         </div>
 
         {isAdmin ? (
@@ -182,44 +219,28 @@ Download the template, fill it in Excel, save it as CSV, then upload it here. Re
           </div>
         ) : null}
 
+        {loading ? (
+          <p className="rounded-xl bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
+            Importing {rowCount ?? ""} rows. Please wait...
+          </p>
+        ) : null}
+
         {message ? (
-          <p
-            className="
-              rounded-xl
-              bg-emerald-50
-              px-4
-              py-3
-              text-sm
-              text-emerald-700
-            "
-          >
+          <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             {message}
           </p>
         ) : null}
 
         {error ? (
-          <p
-            className="
-              rounded-xl
-              bg-red-50
-              px-4
-              py-3
-              text-sm
-              text-red-600
-            "
-          >
+          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
           </p>
         ) : null}
 
         <Button
           type="submit"
-          disabled={loading}
-          className="
-            w-full
-            rounded-xl
-            py-6
-          "
+          disabled={loading || (rowCount !== null && rowCount > MAX_IMPORT_ROWS)}
+          className="w-full rounded-xl py-6"
         >
           {loading ? "Importing..." : "Import words"}
         </Button>

@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 
+const MAX_IMPORT_ROWS = 1000;
+const MAX_PERSONAL_WORDS = 1000;
+
 type CsvWordRow = {
   text: string;
   meaning: string;
@@ -136,6 +139,38 @@ export async function POST(request: Request) {
         { error: "No valid rows found. Text and meaning are required." },
         { status: 400 }
       );
+    }
+
+    if (rows.length > MAX_IMPORT_ROWS) {
+      return NextResponse.json(
+        {
+          error: `Too many rows. Please import up to ${MAX_IMPORT_ROWS} rows at a time.`,
+          rowCount: rows.length,
+          maxRows: MAX_IMPORT_ROWS,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!isGlobalImport) {
+      const personalWordsCount = await prisma.word.count({
+        where: {
+          isGlobal: false,
+          createdByUserId: session.user.id,
+        },
+      });
+
+      if (personalWordsCount + rows.length > MAX_PERSONAL_WORDS) {
+        return NextResponse.json(
+          {
+            error: `Personal word limit reached. You can have up to ${MAX_PERSONAL_WORDS} personal words.`,
+            personalWordsCount,
+            incomingRows: rows.length,
+            maxPersonalWords: MAX_PERSONAL_WORDS,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     let importedCount = 0;
