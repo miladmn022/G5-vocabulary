@@ -7,8 +7,11 @@ import BottomNav from "@/components/bottom-nav";
 import LogoutButton from "@/components/logout-button";
 import InstallButton from "@/components/install-button";
 import DashboardActionGrid from "@/components/dashboard-action-grid";
+import DashboardWordPreview from "@/components/dashboard-word-preview";
+import DailyGoalSelector from "@/components/daily-goal-selector";
 import { getSession } from "@/lib/session";
 import { getDashboardStats } from "@/lib/dashboard-stats";
+import { getDashboardWords } from "@/lib/dashboard-words";
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -19,6 +22,13 @@ export default async function DashboardPage() {
 
   const stats = await getDashboardStats({
     userId: session.user.id,
+  });
+
+  const previewScope = session.user.role === "ADMIN" ? "global" : "personal";
+
+  const previewWords = await getDashboardWords({
+    userId: session.user.id,
+    scope: previewScope,
   });
 
   return (
@@ -46,6 +56,13 @@ export default async function DashboardPage() {
 
       <DashboardActionGrid isAdmin={session.user.role === "ADMIN"} />
 
+      <DailyGoalSelector dailyGoal={stats.dailyGoal} />
+
+      <DashboardWordPreview
+        scope={previewScope}
+        words={previewWords}
+      />
+
       <div
         className="
           mt-5
@@ -57,21 +74,25 @@ export default async function DashboardPage() {
         <StatCard
           title="Today's Goal"
           value={`${stats.reviewedToday}/${stats.dailyGoal}`}
+          tone="indigo"
         />
 
         <StatCard
           title="Learned"
           value={`${stats.learnedWords}`}
+          tone="emerald"
         />
 
         <StatCard
           title="Due Now"
           value={`${stats.dueWords}`}
+          tone="amber"
         />
 
         <StatCard
           title="Total Words"
           value={`${stats.totalWords}`}
+          tone="rose"
         />
       </div>
 

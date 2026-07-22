@@ -4,18 +4,30 @@ type GetDashboardStatsInput = {
   userId: string;
 };
 
-export async function getDashboardStats({ userId }: GetDashboardStatsInput) {
+export async function getDashboardStats({
+  userId,
+}: GetDashboardStatsInput) {
   const now = new Date();
 
   const startOfToday = new Date(now);
   startOfToday.setHours(0, 0, 0, 0);
 
   const [
+    user,
     totalWords,
     learnedWords,
     dueWords,
     reviewedToday,
   ] = await Promise.all([
+    prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        dailyGoal: true,
+      },
+    }),
+
     prisma.userWord.count({
       where: {
         userId,
@@ -25,8 +37,8 @@ export async function getDashboardStats({ userId }: GetDashboardStatsInput) {
     prisma.userWord.count({
       where: {
         userId,
-        reviewCount: {
-          gt: 0,
+        g5Level: {
+          gte: 5,
         },
       },
     }),
@@ -55,6 +67,6 @@ export async function getDashboardStats({ userId }: GetDashboardStatsInput) {
     learnedWords,
     dueWords,
     reviewedToday,
-    dailyGoal: 10,
+    dailyGoal: user?.dailyGoal || 20,
   };
 }

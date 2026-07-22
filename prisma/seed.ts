@@ -14,6 +14,7 @@ async function main() {
       passwordHash,
       role: "ADMIN",
       isActive: true,
+      dailyGoal: 20,
     },
     create: {
       email: "demo@g5.local",
@@ -21,6 +22,7 @@ async function main() {
       passwordHash,
       role: "ADMIN",
       isActive: true,
+      dailyGoal: 20,
     },
   });
 
