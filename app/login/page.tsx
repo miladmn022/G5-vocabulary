@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import Logo from "@/components/logo";
 import AuthCard from "@/components/auth-card";
 import LoginForm from "@/components/login-form";
@@ -68,7 +69,17 @@ export default async function LoginPage() {
               text-gray-500
             "
           >
-            Don't have an account?
+            Don't have an account?{" "}
+            <Link
+              href="https://axorizen.com/contact"
+              className="
+                font-medium
+                text-indigo-600
+                hover:text-indigo-700
+              "
+            >
+              Contact me
+            </Link>
           </p>
         </AuthCard>
       </div>

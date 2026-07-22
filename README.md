@@ -1,41 +1,55 @@
-# G5 Vocabulary Trainer
+# G5 Vocabulary
 
-A personal vocabulary learning web app with flashcards, spaced review, user login, admin tools, and CSV word import.
+G5 Vocabulary is a small vocabulary training app I’m building for structured word review and daily practice.
 
-## Tech stack
+The idea is simple: add words, review them as flashcards, and let the app decide when each word should come back based on how well it was remembered.
+
+## What it does
+
+- User login with session-based authentication
+- Flashcard learning flow
+- Review buttons: Again, Hard, Good, Easy
+- Personal learning progress per user
+- Admin area for managing words and users
+- CSV template download for bulk word import
+- CSV import for adding multiple words at once
+- Global words for all users
+- Personal words for individual users
+- Dashboard with basic learning stats
+
+## Stack
 
 - Next.js
 - TypeScript
 - Tailwind CSS
 - Prisma
-- SQLite for local development
-- PostgreSQL planned for production
-- Vercel deployment
+- PostgreSQL
+- Vercel
 
-## Getting started
+## Local setup
 
 Install dependencies:
 
     npm install
 
-Create a local `.env` file:
+Create a `.env` file:
 
-    DATABASE_URL="file:./dev.db"
-    SESSION_SECRET="your-local-session-secret"
+    DATABASE_URL="your-database-url"
+    SESSION_SECRET="your-session-secret"
 
 Generate a session secret:
 
     openssl rand -base64 32
 
-Run Prisma migrations:
+Run database migrations:
 
     npx prisma migrate dev
 
-Seed the local database:
+Seed the database:
 
     npm run seed
 
-Run the development server:
+Start the app:
 
     npm run dev
 
@@ -43,69 +57,39 @@ Open:
 
     http://localhost:3000
 
-## Demo login
+## Database
 
-Local seed creates a demo admin user:
+The app uses Prisma with PostgreSQL.
 
-    email: demo@g5.local
-    password: demo1234
-
-## Environment variables
-
-Local development:
-
-    DATABASE_URL="file:./dev.db"
-    SESSION_SECRET="your-local-session-secret"
-
-Production example:
-
-    DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
-    SESSION_SECRET="your-production-session-secret"
-
-Never commit `.env`, local database files, cookies, or secrets.
-
-## Database commands
-
-Run migrations:
+Useful commands:
 
     npx prisma migrate dev
-
-Generate Prisma client:
-
     npx prisma generate
-
-Open Prisma Studio:
-
     npx prisma studio
-
-Seed database:
-
     npm run seed
 
-## Features
+## CSV import format
 
-- Login with session cookie
-- Protected dashboard and learning pages
-- Flashcard review flow
-- G5 review engine
-- User-specific learning state
-- Admin word creation
-- Admin user creation
-- CSV template download
-- CSV word import
-- Global and personal word support
+The import file should be a CSV with these columns:
 
-## Deployment notes
+    text,meaning,synonyms,antonyms,example,level
 
-The app is planned for Vercel deployment.
+Required columns:
 
-Before production deployment:
+    text
+    meaning
 
-1. Create a PostgreSQL database.
-2. Set production `DATABASE_URL`.
-3. Set a new production `SESSION_SECRET`.
-4. Switch Prisma datasource from SQLite to PostgreSQL.
-5. Run production migrations.
-6. Deploy through Vercel.
+Optional columns:
 
-Do not hardcode domains or secrets in the repository.
+    synonyms
+    antonyms
+    example
+    level
+
+A downloadable CSV template is available inside the app.
+
+## Notes
+
+This is an active personal project, so the structure may change as the product grows.
+
+Secrets, local database files, cookies, and environment files should never be committed.
