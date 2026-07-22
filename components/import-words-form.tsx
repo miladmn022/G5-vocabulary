@@ -45,6 +45,7 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
         return;
       }
 
+      setError("");
       setMessage(
         `Imported ${data.importedCount} words as ${data.scope}.`
       );

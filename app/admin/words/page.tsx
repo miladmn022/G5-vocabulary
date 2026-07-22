@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import AppShell from "@/components/app-shell";
 import AdminWordForm from "@/components/admin-word-form";
+import AdminWordList from "@/components/admin-word-list";
 import { getSession } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
 
 export default async function AdminWordsPage() {
   const session = await getSession();
@@ -14,6 +16,22 @@ export default async function AdminWordsPage() {
     redirect("/dashboard");
   }
 
+  const words = await prisma.word.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 10,
+    select: {
+      id: true,
+      text: true,
+      meaning: true,
+      isGlobal: true,
+      source: true,
+      level: true,
+      createdAt: true,
+    },
+  });
+
   return (
     <AppShell>
       <div className="py-6">
@@ -25,6 +43,8 @@ export default async function AdminWordsPage() {
       </div>
 
       <AdminWordForm />
+
+      <AdminWordList words={words} />
     </AppShell>
   );
 }
