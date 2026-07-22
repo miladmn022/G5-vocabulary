@@ -89,7 +89,7 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
             text-gray-500
           "
         >
-          Download the template, fill it in Excel, save it as CSV, then upload it here.
+Download the template, fill it in Excel, save it as CSV, then upload it here. Regular users import personal words only. Admins can import global words for everyone.
         </p>
       </div>
 

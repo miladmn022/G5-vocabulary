@@ -5,7 +5,6 @@ type DashboardHeaderProps = {
 
 function getInitial(name: string | null, email: string) {
   const value = name || email;
-
   return value.charAt(0).toUpperCase();
 }
 
@@ -21,35 +20,16 @@ export default function DashboardHeader({
       className="
         flex
         items-center
-        justify-between
+        gap-3
         py-6
       "
     >
-      <div>
-        <p
-          className="
-            text-sm
-            text-gray-500
-          "
-        >
-          Good morning 👋
-        </p>
-
-        <h1
-          className="
-            text-2xl
-            font-bold
-          "
-        >
-          {displayName}
-        </h1>
-      </div>
-
       <div
         className="
           flex
           h-12
           w-12
+          shrink-0
           items-center
           justify-center
           rounded-full
@@ -59,6 +39,27 @@ export default function DashboardHeader({
         "
       >
         {initial}
+      </div>
+
+      <div>
+        <p
+          className="
+            text-sm
+            text-gray-500
+          "
+        >
+          Welcome back
+        </p>
+
+        <h1
+          className="
+            text-2xl
+            font-bold
+            text-gray-900
+          "
+        >
+          {displayName}
+        </h1>
       </div>
     </div>
   );

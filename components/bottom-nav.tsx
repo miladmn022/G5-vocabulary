@@ -43,14 +43,14 @@ export default function BottomNav() {
       </Link>
 
       <Link
-        href="/import"
+        href="/words"
         className="
           text-center
           text-gray-600
         "
       >
-        ➕
-        <p className="text-xs">Add</p>
+        🔤
+        <p className="text-xs">Words</p>
       </Link>
     </nav>
   );

@@ -1,50 +1,50 @@
-import { Button } from "@/components/ui/button";
-import Card from "./card";
+import Link from "next/link";
 
+export default function StartLearningCard() {
+  return (
+    <Link
+      href="/learn"
+      className="
+        mt-5
+        block
+        rounded-3xl
+        bg-gradient-to-br
+        from-indigo-600
+        to-violet-600
+        p-6
+        text-white
+        shadow-lg
+        transition
+        hover:scale-[1.01]
+        active:scale-[0.99]
+      "
+    >
+      <p className="text-sm text-indigo-100">
+        Daily practice
+      </p>
 
-export default function StartLearningCard(){
+      <h2 className="mt-2 text-2xl font-bold">
+        Start learning
+      </h2>
 
-return (
+      <p className="mt-2 text-sm text-indigo-100">
+        Review your due words in a short 10–15 minute session.
+      </p>
 
-<Card
-className="
-bg-indigo-600
-text-white
-"
->
-
-
-<h2 className="
-text-xl
-font-bold
-">
-Ready to learn?
-</h2>
-
-
-<p className="
-mt-2
-text-indigo-100
-">
-Review today's vocabulary cards
-</p>
-
-
-<Button
-className="
-mt-5
-w-full
-bg-white
-text-indigo-700
-hover:bg-gray-100
-"
->
-Start Learning
-</Button>
-
-
-</Card>
-
-)
-
+      <div
+        className="
+          mt-5
+          inline-flex
+          rounded-full
+          bg-white/15
+          px-4
+          py-2
+          text-sm
+          font-medium
+        "
+      >
+        Continue →
+      </div>
+    </Link>
+  );
 }

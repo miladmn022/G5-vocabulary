@@ -48,7 +48,7 @@ export default async function AdminUsersPage() {
 
       <AdminUserForm />
 
-      <AdminUserList users={users} />
+      <AdminUserList users={users} currentUserId={session.user.id} />
     </AppShell>
   );
 }
