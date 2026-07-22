@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import Flashcard from "@/components/flashcard";
 import ReviewButtons from "@/components/review-buttons";
+import { Button } from "@/components/ui/button";
 
 type ReviewRating = "AGAIN" | "HARD" | "GOOD" | "EASY";
 
@@ -116,9 +118,75 @@ export default function LearnClient() {
 
   if (!userWord) {
     return (
-      <div className="mt-8 rounded-3xl bg-white p-8 text-center shadow-lg border border-gray-100">
-        <h2 className="text-2xl font-bold text-gray-900">All done</h2>
-        <p className="mt-3 text-gray-500">{message}</p>
+      <div
+        className="
+          mt-8
+          rounded-3xl
+          bg-white
+          p-8
+          text-center
+          shadow-lg
+          border
+          border-gray-100
+        "
+      >
+        <div
+          className="
+            mx-auto
+            flex
+            h-16
+            w-16
+            items-center
+            justify-center
+            rounded-full
+            bg-emerald-50
+            text-3xl
+          "
+        >
+          ✅
+        </div>
+
+        <h2
+          className="
+            mt-5
+            text-2xl
+            font-bold
+            text-gray-900
+          "
+        >
+          All reviews done
+        </h2>
+
+        <p
+          className="
+            mt-3
+            text-gray-500
+          "
+        >
+          {message || "You have no words ready for review right now."}
+        </p>
+
+        <p
+          className="
+            mt-2
+            text-sm
+            text-gray-400
+          "
+        >
+          Come back later when your next review is ready.
+        </p>
+
+        <Button
+          asChild
+          className="
+            mt-6
+            rounded-xl
+          "
+        >
+          <Link href="/dashboard">
+            Back to dashboard
+          </Link>
+        </Button>
       </div>
     );
   }
