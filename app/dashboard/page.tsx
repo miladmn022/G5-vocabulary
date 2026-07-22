@@ -5,6 +5,7 @@ import StatCard from "@/components/stat-card";
 import StartLearningCard from "@/components/start-learning-card";
 import BottomNav from "@/components/bottom-nav";
 import LogoutButton from "@/components/logout-button";
+import AdminLinks from "@/components/admin-links";
 import { getSession } from "@/lib/session";
 import { getDashboardStats } from "@/lib/dashboard-stats";
 
@@ -37,6 +38,8 @@ export default async function DashboardPage() {
       </div>
 
       <StartLearningCard />
+
+      {session.user.role === "ADMIN" ? <AdminLinks /> : null}
 
       <div
         className="
