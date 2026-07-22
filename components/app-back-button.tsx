@@ -5,23 +5,15 @@ import { useRouter } from "next/navigation";
 export default function AppBackButton() {
   const router = useRouter();
 
-  function goBack() {
-    router.push("/dashboard");
-  }
-
   return (
     <button
       type="button"
-      onClick={goBack}
+      onClick={() => router.push("/dashboard")}
       aria-label="Back to dashboard"
       className="
-        fixed
-        left-4
-        top-4
-        z-50
-        flex
-        h-11
-        w-11
+        inline-flex
+        h-10
+        w-10
         items-center
         justify-center
         rounded-full

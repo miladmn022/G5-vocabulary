@@ -8,44 +8,163 @@ type ImportWordsFormProps = {
   isAdmin: boolean;
 };
 
-const MAX_IMPORT_ROWS = 500;
+type CsvRow = {
+  text: string;
+  meaning: string;
+  synonyms: string;
+  antonyms: string;
+  example: string;
+  level: number;
+};
 
-function countCsvRows(content: string) {
-  return content
+const MAX_IMPORT_ROWS = 500;
+const BATCH_SIZE = 50;
+
+function splitCsvLine(line: string) {
+  const result: string[] = [];
+  let current = "";
+  let insideQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    const nextChar = line[index + 1];
+
+    if (char === '"' && nextChar === '"') {
+      current += '"';
+      index += 1;
+      continue;
+    }
+
+    if (char === '"') {
+      insideQuotes = !insideQuotes;
+      continue;
+    }
+
+    if (char === "," && !insideQuotes) {
+      result.push(current);
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  result.push(current);
+
+  return result.map((value) => value.trim());
+}
+
+function normalizeLevel(value: string) {
+  const level = Number(value);
+
+  if (!Number.isFinite(level) || level <= 1) {
+    return 1;
+  }
+
+  if (level === 2) {
+    return 2;
+  }
+
+  return 3;
+}
+
+function parseCsv(content: string) {
+  const lines = content
     .replace(/^\uFEFF/, "")
     .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean).length - 1;
+    .filter((line) => line.trim().length > 0);
+
+  const [headerLine, ...dataLines] = lines;
+  const headers = splitCsvLine(headerLine).map((header) =>
+    header.toLowerCase()
+  );
+
+  const textIndex = headers.indexOf("text");
+  const meaningIndex = headers.indexOf("meaning");
+  const synonymsIndex = headers.indexOf("synonyms");
+  const antonymsIndex = headers.indexOf("antonyms");
+  const exampleIndex = headers.indexOf("example");
+  const levelIndex = headers.indexOf("level");
+
+  if (textIndex === -1 || meaningIndex === -1) {
+    throw new Error("CSV must include text and meaning columns.");
+  }
+
+  return dataLines
+    .map((line) => {
+      const values = splitCsvLine(line);
+
+      return {
+        text: values[textIndex] || "",
+        meaning: values[meaningIndex] || "",
+        synonyms: synonymsIndex >= 0 ? values[synonymsIndex] || "" : "",
+        antonyms: antonymsIndex >= 0 ? values[antonymsIndex] || "" : "",
+        example: exampleIndex >= 0 ? values[exampleIndex] || "" : "",
+        level: normalizeLevel(levelIndex >= 0 ? values[levelIndex] || "" : ""),
+      };
+    })
+    .filter((row) => row.text.trim() && row.meaning.trim());
 }
 
 export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [rowCount, setRowCount] = useState<number | null>(null);
+  const [rows, setRows] = useState<CsvRow[]>([]);
   const [scope, setScope] = useState<"personal" | "global">("personal");
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   async function handleFileChange(selectedFile: File | null) {
     setFile(selectedFile);
-    setRowCount(null);
+    setRows([]);
     setMessage("");
     setError("");
+    setProgress("");
 
     if (!selectedFile) {
       return;
     }
 
-    const content = await selectedFile.text();
-    const count = countCsvRows(content);
+    try {
+      const content = await selectedFile.text();
+      const parsedRows = parseCsv(content);
 
-    setRowCount(count);
+      setRows(parsedRows);
 
-    if (count > MAX_IMPORT_ROWS) {
+      if (parsedRows.length > MAX_IMPORT_ROWS) {
+        setError(
+          `This file has ${parsedRows.length} valid rows. Please import up to ${MAX_IMPORT_ROWS} rows at a time.`
+        );
+      }
+    } catch (parseError) {
       setError(
-        `This file has ${count} rows. Please import up to ${MAX_IMPORT_ROWS} rows at a time.`
+        parseError instanceof Error
+          ? parseError.message
+          : "Could not read CSV file."
       );
     }
+  }
+
+  async function importBatch(batchRows: CsvRow[]) {
+    const response = await fetch("/api/words/import-batch", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        rows: batchRows,
+        scope,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not import batch.");
+    }
+
+    return data.importedCount as number;
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -53,15 +172,21 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
 
     setMessage("");
     setError("");
+    setProgress("");
 
     if (!file) {
       setError("Please choose a CSV file.");
       return;
     }
 
-    if (rowCount !== null && rowCount > MAX_IMPORT_ROWS) {
+    if (rows.length === 0) {
+      setError("No valid rows found.");
+      return;
+    }
+
+    if (rows.length > MAX_IMPORT_ROWS) {
       setError(
-        `This file has ${rowCount} rows. Please split it into smaller files.`
+        `This file has ${rows.length} valid rows. Please split it into smaller files.`
       );
       return;
     }
@@ -69,36 +194,32 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("scope", scope);
+      let importedTotal = 0;
 
-      const response = await fetch("/api/words/import", {
-        method: "POST",
-        body: formData,
-      });
+      for (let start = 0; start < rows.length; start += BATCH_SIZE) {
+        const batch = rows.slice(start, start + BATCH_SIZE);
+        setProgress(
+          `Importing ${Math.min(start + batch.length, rows.length)} of ${rows.length} rows...`
+        );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Could not import words.");
-        return;
+        const importedCount = await importBatch(batch);
+        importedTotal += importedCount;
       }
 
-      setError("");
-      const summary = data.levelSummary
-        ? ` Beginner: ${data.levelSummary.beginner}, Intermediate: ${data.levelSummary.intermediate}, Advanced: ${data.levelSummary.advanced}.`
-        : "";
-
+      setProgress("");
       setMessage(
-        `Imported ${data.importedCount} of ${data.processedCount ?? rowCount ?? data.importedCount} rows as ${data.scope}.${summary}`
+        `Imported ${importedTotal} of ${rows.length} rows as ${scope}.`
       );
 
       setFile(null);
-      setRowCount(null);
+      setRows([]);
       event.currentTarget.reset();
-    } catch {
-      setError("Could not connect to import API. Please try a smaller file.");
+    } catch (importError) {
+      setError(
+        importError instanceof Error
+          ? importError.message
+          : "Could not import words."
+      );
     } finally {
       setLoading(false);
     }
@@ -127,7 +248,7 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
         </p>
 
         <p className="mt-2 text-sm text-amber-600">
-          Import limit: {MAX_IMPORT_ROWS} rows per file. Split large lists into smaller batches.
+          Import limit: {MAX_IMPORT_ROWS} rows per file. Large files are imported in batches of {BATCH_SIZE}.
         </p>
       </div>
 
@@ -187,9 +308,9 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
             "
           />
 
-          {rowCount !== null ? (
+          {rows.length > 0 ? (
             <p className="mt-2 text-sm text-gray-500">
-              Detected rows: {rowCount} / Max {MAX_IMPORT_ROWS}
+              Detected rows: {rows.length} / Max {MAX_IMPORT_ROWS}
             </p>
           ) : null}
         </div>
@@ -223,9 +344,9 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
           </div>
         ) : null}
 
-        {loading ? (
+        {progress ? (
           <p className="rounded-xl bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
-            Importing {rowCount ?? ""} rows. Please wait...
+            {progress}
           </p>
         ) : null}
 
@@ -243,7 +364,7 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
 
         <Button
           type="submit"
-          disabled={loading || (rowCount !== null && rowCount > MAX_IMPORT_ROWS)}
+          disabled={loading || rows.length === 0 || rows.length > MAX_IMPORT_ROWS}
           className="w-full rounded-xl py-6"
         >
           {loading ? "Importing..." : "Import words"}

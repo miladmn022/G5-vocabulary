@@ -12,8 +12,6 @@ export default function AppShell({
 }: AppShellProps) {
   return (
     <MobileContainer>
-      {showBackButton ? <AppBackButton /> : null}
-
       <div
         className="
           min-h-screen
@@ -22,6 +20,12 @@ export default function AppShell({
           pb-28
         "
       >
+        {showBackButton ? (
+          <div className="flex justify-end pt-4">
+            <AppBackButton />
+          </div>
+        ) : null}
+
         {children}
       </div>
     </MobileContainer>
