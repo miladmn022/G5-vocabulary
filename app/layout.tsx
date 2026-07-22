@@ -7,8 +7,14 @@ import "./globals.css";
 
 
 export const metadata: Metadata = {
-  title: "G5 Vocabulary Trainer",
-  description: "Smart vocabulary learning system",
+  title: "G5 Vocabulary",
+  description: "Smart vocabulary review and flashcard training.",
+  manifest: "/manifest.webmanifest",
+  themeColor: "#4F46E5",
+  icons: {
+    icon: "/g5-icon.svg",
+    apple: "/g5-icon.svg",
+  },
 };
 
 

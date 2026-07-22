@@ -7,6 +7,7 @@ import BottomNav from "@/components/bottom-nav";
 import LogoutButton from "@/components/logout-button";
 import AdminLinks from "@/components/admin-links";
 import ImportLinkCard from "@/components/import-link-card";
+import InstallLinkCard from "@/components/install-link-card";
 import { getSession } from "@/lib/session";
 import { getDashboardStats } from "@/lib/dashboard-stats";
 
@@ -41,6 +42,8 @@ export default async function DashboardPage() {
       <StartLearningCard />
 
       <ImportLinkCard />
+
+      <InstallLinkCard />
 
       {session.user.role === "ADMIN" ? <AdminLinks /> : null}
 
