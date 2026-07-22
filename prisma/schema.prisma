@@ -33,6 +33,7 @@ model User {
   role         UserRole @default(USER)
   isActive     Boolean  @default(true)
   dailyGoal    Int      @default(20)
+  learningLevel String   @default("INTERMEDIATE")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

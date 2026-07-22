@@ -12,6 +12,7 @@ import DailyGoalSelector from "@/components/daily-goal-selector";
 import { getSession } from "@/lib/session";
 import { getDashboardStats } from "@/lib/dashboard-stats";
 import { getDashboardWords } from "@/lib/dashboard-words";
+import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -26,13 +27,30 @@ export default async function DashboardPage() {
 
   const previewScope = session.user.role === "ADMIN" ? "global" : "personal";
 
+  const userPreferences = await prisma.user.findUnique({
+    where: {
+      id: session.user.id,
+    },
+    select: {
+      learningLevel: true,
+    },
+  });
+
+  const learningLevel =
+    userPreferences?.learningLevel === "BEGINNER" ||
+    userPreferences?.learningLevel === "INTERMEDIATE" ||
+    userPreferences?.learningLevel === "ADVANCED"
+      ? userPreferences.learningLevel
+      : "INTERMEDIATE";
+
   const previewWords = await getDashboardWords({
     userId: session.user.id,
     scope: previewScope,
+    learningLevel,
   });
 
   return (
-    <AppShell>
+    <AppShell showBackButton={false}>
       <div
         className="
           flex

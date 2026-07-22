@@ -8,7 +8,7 @@ type ImportWordsFormProps = {
   isAdmin: boolean;
 };
 
-const MAX_IMPORT_ROWS = 1000;
+const MAX_IMPORT_ROWS = 500;
 
 function countCsvRows(content: string) {
   return content
@@ -123,7 +123,7 @@ export default function ImportWordsForm({ isAdmin }: ImportWordsFormProps) {
         </p>
 
         <p className="mt-2 text-sm text-amber-600">
-          Import limit: {MAX_IMPORT_ROWS} rows per file.
+          Import limit: {MAX_IMPORT_ROWS} rows per file. Split large lists into smaller batches.
         </p>
       </div>
 

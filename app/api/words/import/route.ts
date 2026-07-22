@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 
-const MAX_IMPORT_ROWS = 1000;
+const MAX_IMPORT_ROWS = 500;
 const MAX_PERSONAL_WORDS = 1000;
 
 type CsvWordRow = {
@@ -173,90 +173,61 @@ export async function POST(request: Request) {
       }
     }
 
-    let importedCount = 0;
-    let skippedCount = 0;
-
-    for (const row of rows) {
-      const word = await prisma.word.upsert({
+    const operations = rows.map((row) =>
+      prisma.word.upsert({
         where: {
           text: row.text,
         },
         update: {
           meaning: row.meaning,
-          synonyms: row.synonyms,
-          antonyms: row.antonyms,
-          example: row.example,
-          level: row.level,
+          synonyms: row.synonyms || "",
+          antonyms: row.antonyms || "",
+          example: row.example || "",
+          level: Number(row.level) || 0,
           isGlobal: isGlobalImport,
-          createdByUserId: session.user.id,
-          source: "EXCEL_IMPORT",
+          createdByUserId: isGlobalImport ? null : session.user.id,
         },
         create: {
           text: row.text,
           meaning: row.meaning,
-          synonyms: row.synonyms,
-          antonyms: row.antonyms,
-          example: row.example,
-          level: row.level,
+          synonyms: row.synonyms || "",
+          antonyms: row.antonyms || "",
+          example: row.example || "",
+          level: Number(row.level) || 0,
           isGlobal: isGlobalImport,
-          createdByUserId: session.user.id,
-          source: "EXCEL_IMPORT",
+          createdByUserId: isGlobalImport ? null : session.user.id,
         },
-      });
+      })
+    );
 
-      if (isGlobalImport) {
-        const users = await prisma.user.findMany({
-          where: {
-            isActive: true,
-          },
-          select: {
-            id: true,
-          },
-        });
+    const importedWords = await prisma.$transaction(operations);
 
-        await Promise.all(
-          users.map((user) =>
-            prisma.userWord.upsert({
-              where: {
-                userId_wordId: {
-                  userId: user.id,
-                  wordId: word.id,
-                },
-              },
-              update: {},
-              create: {
-                userId: user.id,
+    if (!isGlobalImport) {
+      await prisma.$transaction(
+        importedWords.map((word) =>
+          prisma.userWord.upsert({
+            where: {
+              userId_wordId: {
+                userId: session.user.id,
                 wordId: word.id,
-                g5Level: 0,
-                easeFactor: 2.5,
-                interval: 0,
-                nextReviewAt: new Date(),
               },
-            })
-          )
-        );
-      } else {
-        await prisma.userWord.upsert({
-          where: {
-            userId_wordId: {
+            },
+            update: {},
+            create: {
               userId: session.user.id,
               wordId: word.id,
+              g5Level: 0,
+              easeFactor: 2.5,
+              interval: 0,
+              nextReviewAt: new Date(),
             },
-          },
-          update: {},
-          create: {
-            userId: session.user.id,
-            wordId: word.id,
-            g5Level: 0,
-            easeFactor: 2.5,
-            interval: 0,
-            nextReviewAt: new Date(),
-          },
-        });
-      }
-
-      importedCount++;
+          })
+        )
+      );
     }
+
+    const importedCount = importedWords.length;
+    const skippedCount = 0;
 
     return NextResponse.json({
       importedCount,

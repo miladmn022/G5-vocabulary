@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import AppShell from "@/components/app-shell";
 import DailyGoalSelector from "@/components/daily-goal-selector";
+import LearningLevelSelector from "@/components/learning-level-selector";
 import DeleteAllWordsButton from "@/components/delete-all-words-button";
 import { getSession } from "@/lib/session";
 import {
@@ -30,20 +31,30 @@ export default async function WordsPage({
   const scope = params.scope === "personal" ? "personal" : "global";
   const query = params.q?.trim() || "";
 
-  const [words, userPreferences, counts] = await Promise.all([
+  const userPreferences = await prisma.user.findUnique({
+    where: {
+      id: session.user.id,
+    },
+    select: {
+      dailyGoal: true,
+      learningLevel: true,
+    },
+  });
+
+  const learningLevel =
+    userPreferences?.learningLevel === "BEGINNER" ||
+    userPreferences?.learningLevel === "INTERMEDIATE" ||
+    userPreferences?.learningLevel === "ADVANCED"
+      ? userPreferences.learningLevel
+      : "INTERMEDIATE";
+
+  const [words, counts] = await Promise.all([
     getDashboardWords({
       userId: session.user.id,
       scope,
       query,
       take: 60,
-    }),
-    prisma.user.findUnique({
-      where: {
-        id: session.user.id,
-      },
-      select: {
-        dailyGoal: true,
-      },
+      learningLevel,
     }),
     getWordCounts(session.user.id),
   ]);
@@ -59,6 +70,8 @@ export default async function WordsPage({
       </div>
 
       <DailyGoalSelector dailyGoal={userPreferences?.dailyGoal || 20} />
+
+      <LearningLevelSelector learningLevel={learningLevel} />
 
       <div className="mt-5 grid grid-cols-2 gap-3">
         <Link

@@ -2,11 +2,19 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 
+type LearningLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+
 type UpdatePreferencesRequestBody = {
   dailyGoal?: number;
+  learningLevel?: LearningLevel;
 };
 
 const allowedDailyGoals = [10, 20, 30, 40, 50];
+const allowedLearningLevels: LearningLevel[] = [
+  "BEGINNER",
+  "INTERMEDIATE",
+  "ADVANCED",
+];
 
 export async function PATCH(request: Request) {
   try {
@@ -21,12 +29,39 @@ export async function PATCH(request: Request) {
 
     const body = (await request.json()) as UpdatePreferencesRequestBody;
 
-    if (
-      typeof body.dailyGoal !== "number" ||
-      !allowedDailyGoals.includes(body.dailyGoal)
-    ) {
+    const data: {
+      dailyGoal?: number;
+      learningLevel?: LearningLevel;
+    } = {};
+
+    if (typeof body.dailyGoal !== "undefined") {
+      if (
+        typeof body.dailyGoal !== "number" ||
+        !allowedDailyGoals.includes(body.dailyGoal)
+      ) {
+        return NextResponse.json(
+          { error: "Invalid daily goal" },
+          { status: 400 }
+        );
+      }
+
+      data.dailyGoal = body.dailyGoal;
+    }
+
+    if (typeof body.learningLevel !== "undefined") {
+      if (!allowedLearningLevels.includes(body.learningLevel)) {
+        return NextResponse.json(
+          { error: "Invalid learning level" },
+          { status: 400 }
+        );
+      }
+
+      data.learningLevel = body.learningLevel;
+    }
+
+    if (Object.keys(data).length === 0) {
       return NextResponse.json(
-        { error: "Invalid daily goal" },
+        { error: "No preferences provided" },
         { status: 400 }
       );
     }
@@ -35,12 +70,11 @@ export async function PATCH(request: Request) {
       where: {
         id: session.user.id,
       },
-      data: {
-        dailyGoal: body.dailyGoal,
-      },
+      data,
       select: {
         id: true,
         dailyGoal: true,
+        learningLevel: true,
       },
     });
 

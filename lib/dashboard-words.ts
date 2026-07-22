@@ -1,27 +1,58 @@
 import { prisma } from "@/lib/prisma";
 
 type WordScope = "global" | "personal";
+type LearningLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 
 type GetDashboardWordsInput = {
   userId: string;
   scope: WordScope;
   query?: string;
   take?: number;
+  learningLevel?: LearningLevel;
 };
+
+function getLevelWhere(learningLevel?: LearningLevel) {
+  if (!learningLevel) {
+    return {};
+  }
+
+  if (learningLevel === "BEGINNER") {
+    return {
+      level: {
+        lte: 1,
+      },
+    };
+  }
+
+  if (learningLevel === "INTERMEDIATE") {
+    return {
+      level: 2,
+    };
+  }
+
+  return {
+    level: {
+      gte: 2,
+    },
+  };
+}
 
 function getWhere({
   userId,
   scope,
   query,
+  learningLevel,
 }: {
   userId: string;
   scope: WordScope;
   query?: string;
+  learningLevel?: LearningLevel;
 }) {
   const scopeWhere =
     scope === "global"
       ? {
           isGlobal: true,
+          ...getLevelWhere(learningLevel),
         }
       : {
           isGlobal: false,
@@ -62,12 +93,14 @@ export async function getDashboardWords({
   scope,
   query,
   take = 12,
+  learningLevel,
 }: GetDashboardWordsInput) {
   const words = await prisma.word.findMany({
     where: getWhere({
       userId,
       scope,
       query,
+      learningLevel,
     }),
     orderBy: {
       createdAt: "desc",
