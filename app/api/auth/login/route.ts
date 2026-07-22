@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { setSessionCookie } from "@/lib/session";
 
 type LoginRequestBody = {
   email?: string;
@@ -42,6 +43,15 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
+
+    await setSessionCookie({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    });
 
     return NextResponse.json({
       user: {

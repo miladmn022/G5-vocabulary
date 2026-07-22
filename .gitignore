@@ -47,3 +47,6 @@ prisma/dev.db-journal
 *.sqlite3
 *.db
 *.db-journal
+
+# local auth test files
+cookies.txt
