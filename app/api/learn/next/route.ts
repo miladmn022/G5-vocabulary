@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/session";
 
 function jsonResponse(data: unknown, init?: ResponseInit) {
   return NextResponse.json(data, {
@@ -13,16 +14,25 @@ function jsonResponse(data: unknown, init?: ResponseInit) {
 
 export async function GET() {
   try {
+    const session = await getSession();
+
+    if (!session) {
+      return jsonResponse(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const user = await prisma.user.findUnique({
       where: {
-        email: "demo@g5.local",
+        id: session.user.id,
       },
     });
 
-    if (!user) {
+    if (!user || !user.isActive) {
       return jsonResponse(
-        { error: "Demo user not found" },
-        { status: 404 }
+        { error: "Unauthorized" },
+        { status: 401 }
       );
     }
 

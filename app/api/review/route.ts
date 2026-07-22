@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateG5Review, type ReviewRating } from "@/lib/g5-engine";
+import { getSession } from "@/lib/session";
 
 type ReviewRequestBody = {
   userWordId?: string;
@@ -11,6 +12,15 @@ const validRatings: ReviewRating[] = ["AGAIN", "HARD", "GOOD", "EASY"];
 
 export async function POST(request: Request) {
   try {
+    const session = await getSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body = (await request.json()) as ReviewRequestBody;
 
     if (!body.userWordId) {
@@ -27,9 +37,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const userWord = await prisma.userWord.findUnique({
+    const userWord = await prisma.userWord.findFirst({
       where: {
         id: body.userWordId,
+        userId: session.user.id,
       },
       include: {
         word: true,
