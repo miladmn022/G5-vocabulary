@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# G5 Vocabulary Trainer
 
-## Getting Started
+A personal vocabulary learning web app with flashcards, spaced review, user login, admin tools, and CSV word import.
 
-First, run the development server:
+## Tech stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Prisma
+- SQLite for local development
+- PostgreSQL planned for production
+- Vercel deployment
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Getting started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Install dependencies:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    npm install
 
-## Learn More
+Create a local `.env` file:
 
-To learn more about Next.js, take a look at the following resources:
+    DATABASE_URL="file:./dev.db"
+    SESSION_SECRET="your-local-session-secret"
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Generate a session secret:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+    openssl rand -base64 32
 
-## Deploy on Vercel
+Run Prisma migrations:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+    npx prisma migrate dev
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Seed the local database:
+
+    npm run seed
+
+Run the development server:
+
+    npm run dev
+
+Open:
+
+    http://localhost:3000
+
+## Demo login
+
+Local seed creates a demo admin user:
+
+    email: demo@g5.local
+    password: demo1234
+
+## Environment variables
+
+Local development:
+
+    DATABASE_URL="file:./dev.db"
+    SESSION_SECRET="your-local-session-secret"
+
+Production example:
+
+    DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
+    SESSION_SECRET="your-production-session-secret"
+
+Never commit `.env`, local database files, cookies, or secrets.
+
+## Database commands
+
+Run migrations:
+
+    npx prisma migrate dev
+
+Generate Prisma client:
+
+    npx prisma generate
+
+Open Prisma Studio:
+
+    npx prisma studio
+
+Seed database:
+
+    npm run seed
+
+## Features
+
+- Login with session cookie
+- Protected dashboard and learning pages
+- Flashcard review flow
+- G5 review engine
+- User-specific learning state
+- Admin word creation
+- Admin user creation
+- CSV template download
+- CSV word import
+- Global and personal word support
+
+## Deployment notes
+
+The app is planned for Vercel deployment.
+
+Before production deployment:
+
+1. Create a PostgreSQL database.
+2. Set production `DATABASE_URL`.
+3. Set a new production `SESSION_SECRET`.
+4. Switch Prisma datasource from SQLite to PostgreSQL.
+5. Run production migrations.
+6. Deploy through Vercel.
+
+Do not hardcode domains or secrets in the repository.

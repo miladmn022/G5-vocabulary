@@ -50,3 +50,6 @@ prisma/dev.db-journal
 
 # local auth test files
 cookies.txt
+
+# keep env example
+!.env.example
