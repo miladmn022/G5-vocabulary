@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import AppShell from "@/components/app-shell";
+import AdminLinks from "@/components/admin-links";
 import AdminUserForm from "@/components/admin-user-form";
 import AdminUserList from "@/components/admin-user-list";
 import { getSession } from "@/lib/session";
@@ -46,7 +47,9 @@ export default async function AdminUsersPage() {
         </p>
       </div>
 
-      <AdminUserForm />
+      <AdminLinks />
+
+<AdminUserForm />
 
       <AdminUserList users={users} currentUserId={session.user.id} />
     </AppShell>

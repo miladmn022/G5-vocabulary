@@ -15,10 +15,7 @@ export async function POST(request: Request) {
     const session = await getSession();
 
     if (!session || session.user.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = (await request.json()) as CreateUserRequestBody;
@@ -43,9 +40,7 @@ export async function POST(request: Request) {
     }
 
     const existingUser = await prisma.user.findUnique({
-      where: {
-        email,
-      },
+      where: { email },
     });
 
     if (existingUser) {
@@ -57,36 +52,36 @@ export async function POST(request: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name,
-        passwordHash,
-        role,
-        isActive: true,
-      },
-    });
+    const user = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          email,
+          name,
+          passwordHash,
+          role,
+          isActive: true,
+        },
+      });
 
-    const words = await prisma.word.findMany({
-      select: {
-        id: true,
-      },
-    });
+      const words = await tx.word.findMany({
+        select: { id: true },
+      });
 
-    await Promise.all(
-      words.map((word) =>
-        prisma.userWord.create({
-          data: {
-            userId: user.id,
+      if (words.length > 0) {
+        await tx.userWord.createMany({
+          data: words.map((word) => ({
+            userId: createdUser.id,
             wordId: word.id,
             g5Level: 0,
             easeFactor: 2.5,
             interval: 0,
             nextReviewAt: new Date(),
-          },
-        })
-      )
-    );
+          })),
+        });
+      }
+
+      return createdUser;
+    });
 
     return NextResponse.json({
       user: {

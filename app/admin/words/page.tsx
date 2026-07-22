@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import AppShell from "@/components/app-shell";
+import AdminLinks from "@/components/admin-links";
 import AdminWordForm from "@/components/admin-word-form";
 import AdminWordList from "@/components/admin-word-list";
 import { getSession } from "@/lib/session";
@@ -42,7 +43,9 @@ export default async function AdminWordsPage() {
         </p>
       </div>
 
-      <AdminWordForm />
+      <AdminLinks />
+
+<AdminWordForm />
 
       <AdminWordList words={words} />
     </AppShell>
