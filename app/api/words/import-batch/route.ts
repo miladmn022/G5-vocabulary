@@ -46,6 +46,7 @@ export async function POST(request: Request) {
 
     const body = (await request.json()) as ImportBatchRequestBody;
     const rows = body.rows || [];
+
     const isGlobalImport =
       session.user.role === "ADMIN" && body.scope === "global";
 
@@ -99,57 +100,74 @@ export async function POST(request: Request) {
       }
     }
 
-    const importedWords = await prisma.$transaction(
-      validRows.map((row) =>
-        prisma.word.upsert({
-          where: {
-            text: row.text,
-          },
-          update: {
-            meaning: row.meaning,
-            synonyms: row.synonyms,
-            antonyms: row.antonyms,
-            example: row.example,
-            level: row.level,
-            isGlobal: isGlobalImport,
-            createdByUserId: isGlobalImport ? null : session.user.id,
-          },
-          create: {
-            text: row.text,
-            meaning: row.meaning,
-            synonyms: row.synonyms,
-            antonyms: row.antonyms,
-            example: row.example,
-            level: row.level,
-            isGlobal: isGlobalImport,
-            createdByUserId: isGlobalImport ? null : session.user.id,
-          },
-        })
-      )
-    );
+    const importedWords = [];
 
-    if (!isGlobalImport) {
-      await prisma.$transaction(
-        importedWords.map((word) =>
-          prisma.userWord.upsert({
-            where: {
-              userId_wordId: {
-                userId: session.user.id,
-                wordId: word.id,
-              },
-            },
-            update: {},
-            create: {
-              userId: session.user.id,
-              wordId: word.id,
-              g5Level: 0,
-              easeFactor: 2.5,
-              interval: 0,
-              nextReviewAt: new Date(),
-            },
-          })
-        )
-      );
+    for (const row of validRows) {
+      const word = await prisma.word.upsert({
+        where: {
+          text: row.text,
+        },
+        update: {
+          meaning: row.meaning,
+          synonyms: row.synonyms,
+          antonyms: row.antonyms,
+          example: row.example,
+          level: row.level,
+          isGlobal: isGlobalImport,
+          createdByUserId: isGlobalImport ? null : session.user.id,
+          source: isGlobalImport ? "EXCEL_IMPORT" : "EXCEL_IMPORT",
+        },
+        create: {
+          text: row.text,
+          meaning: row.meaning,
+          synonyms: row.synonyms,
+          antonyms: row.antonyms,
+          example: row.example,
+          level: row.level,
+          isGlobal: isGlobalImport,
+          createdByUserId: isGlobalImport ? null : session.user.id,
+          source: "EXCEL_IMPORT",
+        },
+      });
+
+      importedWords.push(word);
+    }
+
+    if (isGlobalImport) {
+      const users = await prisma.user.findMany({
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      for (const word of importedWords) {
+        await prisma.userWord.createMany({
+          data: users.map((user) => ({
+            userId: user.id,
+            wordId: word.id,
+            g5Level: 0,
+            easeFactor: 2.5,
+            interval: 0,
+            nextReviewAt: new Date(),
+          })),
+          skipDuplicates: true,
+        });
+      }
+    } else {
+      await prisma.userWord.createMany({
+        data: importedWords.map((word) => ({
+          userId: session.user.id,
+          wordId: word.id,
+          g5Level: 0,
+          easeFactor: 2.5,
+          interval: 0,
+          nextReviewAt: new Date(),
+        })),
+        skipDuplicates: true,
+      });
     }
 
     return NextResponse.json({
@@ -160,7 +178,12 @@ export async function POST(request: Request) {
     console.error("Import batch API error:", error);
 
     return NextResponse.json(
-      { error: "Something went wrong" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong",
+      },
       { status: 500 }
     );
   }

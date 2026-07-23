@@ -5,6 +5,17 @@ import { Button } from "@/components/ui/button";
 
 type UserRole = "ADMIN" | "USER";
 
+type CreateUserResponse = {
+  user?: {
+    id: string;
+    email: string;
+    name: string | null;
+    role: UserRole;
+    isActive: boolean;
+  };
+  error?: string;
+};
+
 export default function AdminUserForm() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -35,9 +46,9 @@ export default function AdminUserForm() {
         }),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as CreateUserResponse;
 
-      if (!response.ok) {
+      if (!response.ok || !data.user) {
         setError(data.error || "Could not create user.");
         return;
       }
@@ -55,13 +66,7 @@ export default function AdminUserForm() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="
-        mt-6
-        space-y-4
-      "
-    >
+    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
       <div>
         <label className="text-sm font-medium">Email</label>
         <input
@@ -163,15 +168,7 @@ export default function AdminUserForm() {
         </p>
       ) : null}
 
-      <Button
-        type="submit"
-        disabled={loading}
-        className="
-          w-full
-          rounded-xl
-          py-6
-        "
-      >
+      <Button type="submit" disabled={loading} className="w-full rounded-xl py-6">
         {loading ? "Creating..." : "Create user"}
       </Button>
     </form>
