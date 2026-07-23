@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import PronunciationButton from "@/components/pronunciation-button";
 
 type FlashcardWord = {
   text: string;
@@ -22,8 +23,9 @@ export default function Flashcard({ word }: FlashcardProps) {
   }, [word.text]);
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       className="
         perspective
         relative
@@ -35,6 +37,12 @@ export default function Flashcard({ word }: FlashcardProps) {
         outline-none
       "
       onClick={() => setFlipped(!flipped)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          setFlipped((value) => !value);
+        }
+      }}
       aria-label="Flip flashcard"
     >
       <div
@@ -90,22 +98,6 @@ export default function Flashcard({ word }: FlashcardProps) {
           />
 
           <div className="relative flex h-full flex-col items-center justify-center">
-            <div
-              className="
-                mb-6
-                rounded-full
-                bg-white
-                px-4
-                py-2
-                text-xs
-                font-semibold
-                text-indigo-600
-                shadow-sm
-              "
-            >
-              Tap the card to reveal
-            </div>
-
             <h2
               className="
                 text-center
@@ -117,6 +109,10 @@ export default function Flashcard({ word }: FlashcardProps) {
             >
               {word.text}
             </h2>
+
+            <div className="mt-5">
+              <PronunciationButton text={word.text} />
+            </div>
 
             <div
               className="
@@ -157,30 +153,14 @@ export default function Flashcard({ word }: FlashcardProps) {
             shadow-[0_24px_60px_rgba(16,185,129,0.16)]
           "
         >
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
-                Meaning
-              </p>
+          <div className="mb-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
+              Meaning
+            </p>
 
-              <h2 className="mt-1 text-2xl font-black text-gray-900">
-                {word.text}
-              </h2>
-            </div>
-
-            <div
-              className="
-                rounded-full
-                bg-emerald-50
-                px-3
-                py-1
-                text-xs
-                font-semibold
-                text-emerald-700
-              "
-            >
-              Back
-            </div>
+            <h2 className="mt-1 break-words text-2xl font-black text-gray-900">
+              {word.text}
+            </h2>
           </div>
 
           <div className="space-y-4 text-gray-700">
@@ -218,10 +198,10 @@ export default function Flashcard({ word }: FlashcardProps) {
           </div>
 
           <p className="mt-5 text-center text-xs text-gray-400">
-            Tap again to go back
+            Tap card to go back
           </p>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
