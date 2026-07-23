@@ -9,7 +9,7 @@ export default function AdminWordForm() {
   const [synonyms, setSynonyms] = useState("");
   const [antonyms, setAntonyms] = useState("");
   const [example, setExample] = useState("");
-  const [level, setLevel] = useState(1);
+  const [level, setLevel] = useState(2);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -50,7 +50,7 @@ export default function AdminWordForm() {
       setSynonyms("");
       setAntonyms("");
       setExample("");
-      setLevel(0);
+      setLevel(2);
     } catch {
       setError("Could not connect to admin API.");
     } finally {
@@ -59,31 +59,14 @@ export default function AdminWordForm() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="
-        mt-6
-        space-y-4
-      "
-    >
+    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
       <div>
         <label className="text-sm font-medium">Word</label>
         <input
           value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder="Example: Focus"
-          className="
-            mt-2
-            w-full
-            rounded-xl
-            border
-            border-gray-200
-            px-4
-            py-3
-            outline-none
-            focus:ring-2
-            focus:ring-indigo-500
-          "
+          className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
 
@@ -93,19 +76,21 @@ export default function AdminWordForm() {
           value={meaning}
           onChange={(event) => setMeaning(event.target.value)}
           placeholder="مثلاً: تمرکز"
-          className="
-            mt-2
-            w-full
-            rounded-xl
-            border
-            border-gray-200
-            px-4
-            py-3
-            outline-none
-            focus:ring-2
-            focus:ring-indigo-500
-          "
+          className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
         />
+      </div>
+
+      <div>
+        <label className="text-sm font-medium">Level</label>
+        <select
+          value={level}
+          onChange={(event) => setLevel(Number(event.target.value))}
+          className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          <option value={1}>Beginner</option>
+          <option value={2}>Intermediate</option>
+          <option value={3}>Advanced</option>
+        </select>
       </div>
 
       <div>
@@ -114,18 +99,7 @@ export default function AdminWordForm() {
           value={synonyms}
           onChange={(event) => setSynonyms(event.target.value)}
           placeholder="concentration, attention"
-          className="
-            mt-2
-            w-full
-            rounded-xl
-            border
-            border-gray-200
-            px-4
-            py-3
-            outline-none
-            focus:ring-2
-            focus:ring-indigo-500
-          "
+          className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
 
@@ -135,18 +109,7 @@ export default function AdminWordForm() {
           value={antonyms}
           onChange={(event) => setAntonyms(event.target.value)}
           placeholder="distraction"
-          className="
-            mt-2
-            w-full
-            rounded-xl
-            border
-            border-gray-200
-            px-4
-            py-3
-            outline-none
-            focus:ring-2
-            focus:ring-indigo-500
-          "
+          className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
 
@@ -156,42 +119,7 @@ export default function AdminWordForm() {
           value={example}
           onChange={(event) => setExample(event.target.value)}
           placeholder="I need focus to study."
-          className="
-            mt-2
-            min-h-24
-            w-full
-            rounded-xl
-            border
-            border-gray-200
-            px-4
-            py-3
-            outline-none
-            focus:ring-2
-            focus:ring-indigo-500
-          "
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">Level</label>
-        <input
-          type="number"
-          min={0}
-          max={5}
-          value={level}
-          onChange={(event) => setLevel(Number(event.target.value))}
-          className="
-            mt-2
-            w-full
-            rounded-xl
-            border
-            border-gray-200
-            px-4
-            py-3
-            outline-none
-            focus:ring-2
-            focus:ring-indigo-500
-          "
+          className="mt-2 min-h-24 w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
 
@@ -207,15 +135,7 @@ export default function AdminWordForm() {
         </p>
       ) : null}
 
-      <Button
-        type="submit"
-        disabled={loading}
-        className="
-          w-full
-          rounded-xl
-          py-6
-        "
-      >
+      <Button type="submit" disabled={loading} className="w-full rounded-xl py-6">
         {loading ? "Saving..." : "Save word"}
       </Button>
     </form>

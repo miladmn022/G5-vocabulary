@@ -39,6 +39,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (role !== "ADMIN" && role !== "USER") {
+      return NextResponse.json(
+        { error: "Role is invalid" },
+        { status: 400 }
+      );
+    }
+
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -52,36 +59,41 @@ export async function POST(request: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const user = await prisma.$transaction(async (tx) => {
-      const createdUser = await tx.user.create({
-        data: {
-          email,
-          name,
-          passwordHash,
-          role,
-          isActive: true,
-        },
-      });
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name,
+        passwordHash,
+        role,
+        isActive: true,
+      },
+    });
 
-      const words = await tx.word.findMany({
-        select: { id: true },
-      });
+    const words = await prisma.word.findMany({
+      select: {
+        id: true,
+      },
+    });
 
-      if (words.length > 0) {
-        await tx.userWord.createMany({
-          data: words.map((word) => ({
-            userId: createdUser.id,
+    if (words.length > 0) {
+      const batchSize = 500;
+
+      for (let index = 0; index < words.length; index += batchSize) {
+        const batch = words.slice(index, index + batchSize);
+
+        await prisma.userWord.createMany({
+          data: batch.map((word) => ({
+            userId: user.id,
             wordId: word.id,
             g5Level: 0,
             easeFactor: 2.5,
             interval: 0,
             nextReviewAt: new Date(),
           })),
+          skipDuplicates: true,
         });
       }
-
-      return createdUser;
-    });
+    }
 
     return NextResponse.json({
       user: {

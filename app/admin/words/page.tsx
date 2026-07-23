@@ -13,11 +13,17 @@ export default async function AdminWordsPage() {
     redirect("/login");
   }
 
-  if (session.user.role !== "ADMIN") {
-    redirect("/dashboard");
-  }
+  const isAdmin = session.user.role === "ADMIN";
 
   const words = await prisma.word.findMany({
+    where: isAdmin
+      ? {
+          isGlobal: true,
+        }
+      : {
+          isGlobal: false,
+          createdByUserId: session.user.id,
+        },
     orderBy: {
       createdAt: "desc",
     },
@@ -36,16 +42,24 @@ export default async function AdminWordsPage() {
   return (
     <AppShell>
       <div className="py-6">
-        <p className="text-sm text-gray-500">Admin</p>
-        <h1 className="text-2xl font-bold">Add new word</h1>
+        <p className="text-sm text-gray-500">
+          {isAdmin ? "Admin" : "Words"}
+        </p>
+
+        <h1 className="text-2xl font-bold">
+          Manage words
+        </h1>
+
         <p className="mt-2 text-gray-500">
-          Add a vocabulary item and make it available for active users.
+          {isAdmin
+            ? "Add global vocabulary words for all active users."
+            : "Add personal vocabulary words to your own learning list."}
         </p>
       </div>
 
-      <AdminLinks />
+      {isAdmin ? <AdminLinks /> : null}
 
-<AdminWordForm />
+      <AdminWordForm />
 
       <AdminWordList words={words} />
     </AppShell>

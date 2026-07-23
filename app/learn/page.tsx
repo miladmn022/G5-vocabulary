@@ -1,20 +1,29 @@
 import { redirect } from "next/navigation";
 import AppShell from "@/components/app-shell";
-import LearningHeader from "@/components/learning-header";
 import LearnClient from "@/components/learn-client";
 import { getSession } from "@/lib/session";
 
-export default async function LearnPage() {
+type LearnPageProps = {
+  searchParams: Promise<{
+    scope?: string;
+  }>;
+};
+
+export default async function LearnPage({
+  searchParams,
+}: LearnPageProps) {
   const session = await getSession();
 
   if (!session) {
     redirect("/login");
   }
 
+  const params = await searchParams;
+  const scope = params.scope === "personal" ? "personal" : "global";
+
   return (
     <AppShell>
-      <LearningHeader />
-      <LearnClient />
+      <LearnClient scope={scope} />
     </AppShell>
   );
 }

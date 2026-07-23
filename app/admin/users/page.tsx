@@ -21,7 +21,7 @@ export default async function AdminUsersPage() {
     orderBy: {
       createdAt: "desc",
     },
-    take: 10,
+    take: 20,
     select: {
       id: true,
       email: true,
@@ -37,6 +37,34 @@ export default async function AdminUsersPage() {
     },
   });
 
+  const personalWordCounts = await prisma.word.groupBy({
+    by: ["createdByUserId"],
+    where: {
+      isGlobal: false,
+      createdByUserId: {
+        not: null,
+      },
+    },
+    _count: {
+      id: true,
+    },
+  });
+
+  const personalCountByUserId = new Map(
+    personalWordCounts
+      .filter((item) => item.createdByUserId)
+      .map((item) => [
+        item.createdByUserId as string,
+        item._count.id,
+      ])
+  );
+
+  const usersWithCounts = users.map((user) => ({
+    ...user,
+    personalWordsCount: personalCountByUserId.get(user.id) || 0,
+    learningWordsCount: user._count.userWords,
+  }));
+
   return (
     <AppShell>
       <div className="py-6">
@@ -49,9 +77,9 @@ export default async function AdminUsersPage() {
 
       <AdminLinks />
 
-<AdminUserForm />
+      <AdminUserForm />
 
-      <AdminUserList users={users} currentUserId={session.user.id} />
+      <AdminUserList users={usersWithCounts} currentUserId={session.user.id} />
     </AppShell>
   );
 }

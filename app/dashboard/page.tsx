@@ -5,13 +5,12 @@ import StatCard from "@/components/stat-card";
 import StartLearningCard from "@/components/start-learning-card";
 import BottomNav from "@/components/bottom-nav";
 import LogoutButton from "@/components/logout-button";
-import InstallButton from "@/components/install-button";
 import DashboardActionGrid from "@/components/dashboard-action-grid";
 import DashboardWordPreview from "@/components/dashboard-word-preview";
 import DailyGoalSelector from "@/components/daily-goal-selector";
 import { getSession } from "@/lib/session";
 import { getDashboardStats } from "@/lib/dashboard-stats";
-import { getDashboardWords } from "@/lib/dashboard-words";
+import { getDashboardWords, getWordCounts } from "@/lib/dashboard-words";
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
@@ -24,6 +23,8 @@ export default async function DashboardPage() {
   const stats = await getDashboardStats({
     userId: session.user.id,
   });
+
+  const counts = await getWordCounts(session.user.id);
 
   const previewScope = session.user.role === "ADMIN" ? "global" : "personal";
 
@@ -57,6 +58,7 @@ export default async function DashboardPage() {
           items-start
           justify-between
           gap-4
+          pt-2
         "
       >
         <DashboardHeader
@@ -64,13 +66,12 @@ export default async function DashboardPage() {
           email={session.user.email}
         />
 
-        <div className="flex items-center gap-2">
-          <InstallButton />
+        <div className="pt-7">
           <LogoutButton />
         </div>
       </div>
 
-      <StartLearningCard />
+      <StartLearningCard personalWordsCount={counts.personalWordsCount} />
 
       <DashboardActionGrid isAdmin={session.user.role === "ADMIN"} />
 
@@ -90,7 +91,7 @@ export default async function DashboardPage() {
         "
       >
         <StatCard
-          title="Today's Goal"
+          title="Current Goal"
           value={`${stats.reviewedToday}/${stats.dailyGoal}`}
           tone="indigo"
         />
@@ -108,7 +109,7 @@ export default async function DashboardPage() {
         />
 
         <StatCard
-          title="Total Words"
+          title="My Review Items"
           value={`${stats.totalWords}`}
           tone="rose"
         />

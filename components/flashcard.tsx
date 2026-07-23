@@ -22,117 +22,206 @@ export default function Flashcard({ word }: FlashcardProps) {
   }, [word.text]);
 
   return (
-    <div
+    <button
+      type="button"
       className="
+        perspective
         relative
-        h-[320px]
+        block
+        h-[340px]
         w-full
         cursor-pointer
+        text-left
+        outline-none
       "
       onClick={() => setFlipped(!flipped)}
+      aria-label="Flip flashcard"
     >
       <div
-        className={`absolute inset-0 transition-transform duration-500 transform-style-preserve-3d ${
-          flipped ? "rotate-y-180" : ""
-        }`}
+        className={`
+          absolute
+          inset-0
+          transform-style-preserve-3d
+          transition-transform
+          duration-500
+          ${flipped ? "rotate-y-180" : ""}
+        `}
       >
-        {/* FRONT */}
         <div
           className="
+            backface-hidden
             absolute
             inset-0
-            flex
-            items-center
-            justify-center
-            rounded-3xl
-            bg-white
-            p-8
-            shadow-lg
+            overflow-hidden
+            rounded-[2rem]
             border
-            border-gray-100
-            backface-hidden
+            border-indigo-100
+            bg-gradient-to-br
+            from-white
+            via-indigo-50
+            to-white
+            p-7
+            shadow-[0_24px_60px_rgba(79,70,229,0.18)]
           "
         >
-          <div>
+          <div
+            className="
+              absolute
+              -right-10
+              -top-10
+              h-32
+              w-32
+              rounded-full
+              bg-indigo-100
+              opacity-70
+            "
+          />
+
+          <div
+            className="
+              absolute
+              bottom-0
+              left-8
+              right-8
+              h-3
+              rounded-t-full
+              bg-indigo-200/60
+            "
+          />
+
+          <div className="relative flex h-full flex-col items-center justify-center">
+            <div
+              className="
+                mb-6
+                rounded-full
+                bg-white
+                px-4
+                py-2
+                text-xs
+                font-semibold
+                text-indigo-600
+                shadow-sm
+              "
+            >
+              Tap the card to reveal
+            </div>
+
             <h2
               className="
-                text-4xl
-                font-bold
-                text-indigo-700
                 text-center
+                text-4xl
+                font-black
+                tracking-tight
+                text-indigo-700
               "
             >
               {word.text}
             </h2>
 
-            <p
+            <div
               className="
-                mt-5
-                text-center
-                text-gray-400
+                mt-8
+                flex
+                items-center
+                gap-2
+                rounded-full
+                border
+                border-indigo-100
+                bg-white/80
+                px-4
+                py-2
+                text-sm
+                font-medium
+                text-gray-500
+                shadow-sm
               "
             >
-              Tap to reveal
-            </p>
+              <span>↻</span>
+              <span>Flip card</span>
+            </div>
           </div>
         </div>
 
-        {/* BACK */}
         <div
           className="
+            backface-hidden
+            rotate-y-180
             absolute
             inset-0
-            rounded-3xl
-            bg-white
-            p-8
-            shadow-lg
-            border
-            border-gray-100
-            rotate-y-180
-            backface-hidden
             overflow-y-auto
+            rounded-[2rem]
+            border
+            border-emerald-100
+            bg-white
+            p-7
+            shadow-[0_24px_60px_rgba(16,185,129,0.16)]
           "
         >
-          <h2
-            className="
-              text-2xl
-              font-bold
-            "
-          >
-            {word.text}
-          </h2>
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
+                Meaning
+              </p>
 
-          <div
-            className="
-              mt-6
-              space-y-3
-              text-gray-600
-            "
-          >
-            <p>
-              <strong>Meaning:</strong> {word.meaning}
-            </p>
+              <h2 className="mt-1 text-2xl font-black text-gray-900">
+                {word.text}
+              </h2>
+            </div>
+
+            <div
+              className="
+                rounded-full
+                bg-emerald-50
+                px-3
+                py-1
+                text-xs
+                font-semibold
+                text-emerald-700
+              "
+            >
+              Back
+            </div>
+          </div>
+
+          <div className="space-y-4 text-gray-700">
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-xs font-semibold text-gray-400">Meaning</p>
+              <p className="mt-1 font-medium">{word.meaning}</p>
+            </div>
 
             {word.synonyms ? (
-              <p>
-                <strong>Synonyms:</strong> {word.synonyms}
-              </p>
+              <div className="rounded-2xl bg-indigo-50 p-4">
+                <p className="text-xs font-semibold text-indigo-500">
+                  Synonyms
+                </p>
+                <p className="mt-1 text-sm">{word.synonyms}</p>
+              </div>
             ) : null}
 
             {word.antonyms ? (
-              <p>
-                <strong>Antonyms:</strong> {word.antonyms}
-              </p>
+              <div className="rounded-2xl bg-rose-50 p-4">
+                <p className="text-xs font-semibold text-rose-500">
+                  Antonyms
+                </p>
+                <p className="mt-1 text-sm">{word.antonyms}</p>
+              </div>
             ) : null}
 
             {word.example ? (
-              <p>
-                <strong>Example:</strong> {word.example}
-              </p>
+              <div className="rounded-2xl bg-amber-50 p-4">
+                <p className="text-xs font-semibold text-amber-600">
+                  Example
+                </p>
+                <p className="mt-1 text-sm">{word.example}</p>
+              </div>
             ) : null}
           </div>
+
+          <p className="mt-5 text-center text-xs text-gray-400">
+            Tap again to go back
+          </p>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

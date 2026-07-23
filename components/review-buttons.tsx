@@ -14,46 +14,69 @@ export default function ReviewButtons({
   return (
     <div
       className="
-        grid
-        grid-cols-4
-        gap-2
         mt-6
+        grid
+        grid-cols-2
+        gap-3
+        sm:grid-cols-4
       "
     >
       <Button
-        variant="outline"
         disabled={disabled}
         onClick={() => onReview("AGAIN")}
+        className="
+          rounded-2xl
+          bg-rose-500
+          py-6
+          text-white
+          shadow-sm
+          hover:bg-rose-600
+        "
       >
         Again
       </Button>
 
       <Button
-        variant="outline"
         disabled={disabled}
         onClick={() => onReview("HARD")}
+        className="
+          rounded-2xl
+          bg-amber-500
+          py-6
+          text-white
+          shadow-sm
+          hover:bg-amber-600
+        "
       >
         Hard
       </Button>
 
       <Button
-        className="
-          bg-emerald-500
-          hover:bg-emerald-600
-        "
         disabled={disabled}
         onClick={() => onReview("GOOD")}
+        className="
+          rounded-2xl
+          bg-emerald-500
+          py-6
+          text-white
+          shadow-sm
+          hover:bg-emerald-600
+        "
       >
         Good
       </Button>
 
       <Button
-        className="
-          bg-indigo-600
-          hover:bg-indigo-700
-        "
         disabled={disabled}
         onClick={() => onReview("EASY")}
+        className="
+          rounded-2xl
+          bg-indigo-600
+          py-6
+          text-white
+          shadow-sm
+          hover:bg-indigo-700
+        "
       >
         Easy
       </Button>

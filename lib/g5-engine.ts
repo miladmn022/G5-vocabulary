@@ -25,6 +25,12 @@ function addMinutes(date: Date, minutes: number) {
   return nextDate;
 }
 
+function addHours(date: Date, hours: number) {
+  const nextDate = new Date(date);
+  nextDate.setHours(nextDate.getHours() + hours);
+  return nextDate;
+}
+
 function addDays(date: Date, days: number) {
   const nextDate = new Date(date);
   nextDate.setDate(nextDate.getDate() + days);
@@ -38,39 +44,39 @@ export function calculateG5Review({
 }: CalculateG5ReviewInput): CalculateG5ReviewOutput {
   const now = new Date();
 
-  let nextLevel = currentLevel;
-  let nextInterval = currentInterval;
-  let nextReviewAt = now;
-
   switch (rating) {
-    case "AGAIN":
-      nextLevel = clampLevel(currentLevel - 1);
-      nextInterval = 0;
-      nextReviewAt = addMinutes(now, 10);
-      break;
+    case "AGAIN": {
+      return {
+        nextLevel: clampLevel(currentLevel - 1),
+        nextInterval: 0,
+        nextReviewAt: addMinutes(now, 3),
+      };
+    }
 
-    case "HARD":
-      nextLevel = clampLevel(currentLevel + 0.5);
-      nextInterval = Math.max(1, Math.round(currentInterval * 1.2));
-      nextReviewAt = addDays(now, nextInterval);
-      break;
+    case "HARD": {
+      return {
+        nextLevel: clampLevel(currentLevel + 0.5),
+        nextInterval: 1,
+        nextReviewAt: addHours(now, 6),
+      };
+    }
 
-    case "GOOD":
-      nextLevel = clampLevel(currentLevel + 1);
-      nextInterval = Math.max(3, Math.round(currentInterval * 2));
-      nextReviewAt = addDays(now, nextInterval);
-      break;
+    case "GOOD": {
+      const nextInterval = Math.max(1, Math.round(currentInterval * 2));
 
-    case "EASY":
-      nextLevel = clampLevel(currentLevel + 2);
-      nextInterval = Math.max(7, Math.round(currentInterval * 3));
-      nextReviewAt = addDays(now, nextInterval);
-      break;
+      return {
+        nextLevel: clampLevel(currentLevel + 1),
+        nextInterval,
+        nextReviewAt: addDays(now, nextInterval),
+      };
+    }
+
+    case "EASY": {
+      return {
+        nextLevel: MAX_LEVEL,
+        nextInterval: 0,
+        nextReviewAt: addDays(now, 3650),
+      };
+    }
   }
-
-  return {
-    nextLevel,
-    nextInterval,
-    nextReviewAt,
-  };
 }

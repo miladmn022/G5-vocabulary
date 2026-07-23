@@ -11,30 +11,16 @@ type GetDashboardWordsInput = {
   learningLevel?: LearningLevel;
 };
 
-function getLevelWhere(learningLevel?: LearningLevel) {
-  if (!learningLevel) {
-    return {};
-  }
-
+function getLevelValue(learningLevel?: LearningLevel) {
   if (learningLevel === "BEGINNER") {
-    return {
-      level: {
-        lte: 1,
-      },
-    };
+    return 1;
   }
 
-  if (learningLevel === "INTERMEDIATE") {
-    return {
-      level: 2,
-    };
+  if (learningLevel === "ADVANCED") {
+    return 3;
   }
 
-  return {
-    level: {
-      gte: 2,
-    },
-  };
+  return 2;
 }
 
 function getWhere({
@@ -52,7 +38,7 @@ function getWhere({
     scope === "global"
       ? {
           isGlobal: true,
-          ...getLevelWhere(learningLevel),
+          level: getLevelValue(learningLevel),
         }
       : {
           isGlobal: false,
@@ -123,16 +109,37 @@ export async function getDashboardWords({
 }
 
 export async function getWordCounts(userId: string) {
-  const [globalWordsCount, personalWordsCount] = await Promise.all([
+  const [
+    globalWordsCount,
+    personalWordsCount,
+    myLearningWordsCount,
+    assignedGlobalWordsCount,
+  ] = await Promise.all([
     prisma.word.count({
       where: {
         isGlobal: true,
       },
     }),
+
     prisma.word.count({
       where: {
         isGlobal: false,
         createdByUserId: userId,
+      },
+    }),
+
+    prisma.userWord.count({
+      where: {
+        userId,
+      },
+    }),
+
+    prisma.userWord.count({
+      where: {
+        userId,
+        word: {
+          isGlobal: true,
+        },
       },
     }),
   ]);
@@ -140,5 +147,7 @@ export async function getWordCounts(userId: string) {
   return {
     globalWordsCount,
     personalWordsCount,
+    myLearningWordsCount,
+    assignedGlobalWordsCount,
   };
 }

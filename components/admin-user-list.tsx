@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 type UserRole = "ADMIN" | "USER";
 
@@ -12,9 +12,8 @@ type AdminUserListItem = {
   role: UserRole;
   isActive: boolean;
   createdAt: Date;
-  _count: {
-    userWords: number;
-  };
+  personalWordsCount: number;
+  learningWordsCount: number;
 };
 
 type AdminUserListProps = {
@@ -26,22 +25,25 @@ export default function AdminUserList({
   users,
   currentUserId,
 }: AdminUserListProps) {
-  const [message, setMessage] = useState("");
+  const router = useRouter();
+  const [loadingUserId, setLoadingUserId] = useState("");
   const [error, setError] = useState("");
-  const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
 
-  async function updateUser(
-    userId: string,
-    data: {
-      name?: string | null;
-      role?: UserRole;
-      isActive?: boolean;
-      password?: string;
-    }
-  ) {
-    setMessage("");
-    setError("");
+  async function updateUser({
+    userId,
+    name,
+    role,
+    password,
+    isActive,
+  }: {
+    userId: string;
+    name: string;
+    role: UserRole;
+    password: string;
+    isActive: boolean;
+  }) {
     setLoadingUserId(userId);
+    setError("");
 
     try {
       const response = await fetch(`/api/admin/users/${userId}`, {
@@ -49,22 +51,26 @@ export default function AdminUserList({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          name,
+          role,
+          password: password || undefined,
+          isActive,
+        }),
       });
 
-      const result = await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-        setError(result.error || "Could not update user.");
+        setError(data.error || "Could not update user.");
         return;
       }
 
-      setMessage(`Updated ${result.user.email}`);
-      window.location.reload();
+      router.refresh();
     } catch {
       setError("Could not connect to user API.");
     } finally {
-      setLoadingUserId(null);
+      setLoadingUserId("");
     }
   }
 
@@ -82,14 +88,11 @@ export default function AdminUserList({
     >
       <div>
         <p className="text-sm text-gray-500">Users</p>
-        <h2 className="text-lg font-bold text-gray-900">Latest users</h2>
-      </div>
-
-      {message ? (
-        <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {message}
+        <h2 className="text-lg font-bold text-gray-900">Learners</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Review items are the words currently assigned to that user for learning.
         </p>
-      ) : null}
+      </div>
 
       {error ? (
         <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -97,48 +100,41 @@ export default function AdminUserList({
         </p>
       ) : null}
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 space-y-4">
         {users.length === 0 ? (
           <p className="text-sm text-gray-500">No users yet.</p>
         ) : (
-          users.map((user) => {
-            const isCurrentUser = user.id === currentUserId;
-            const loading = loadingUserId === user.id;
-
-            return (
-              <UserRow
-                key={user.id}
-                user={user}
-                isCurrentUser={isCurrentUser}
-                loading={loading}
-                onUpdate={updateUser}
-              />
-            );
-          })
+          users.map((user) => (
+            <UserCard
+              key={user.id}
+              user={user}
+              isCurrentUser={user.id === currentUserId}
+              loading={loadingUserId === user.id}
+              onSave={updateUser}
+            />
+          ))
         )}
       </div>
     </div>
   );
 }
 
-function UserRow({
+function UserCard({
   user,
   isCurrentUser,
   loading,
-  onUpdate,
+  onSave,
 }: {
   user: AdminUserListItem;
   isCurrentUser: boolean;
   loading: boolean;
-  onUpdate: (
-    userId: string,
-    data: {
-      name?: string | null;
-      role?: UserRole;
-      isActive?: boolean;
-      password?: string;
-    }
-  ) => void;
+  onSave: (input: {
+    userId: string;
+    name: string;
+    role: UserRole;
+    password: string;
+    isActive: boolean;
+  }) => void;
 }) {
   const [name, setName] = useState(user.name || "");
   const [role, setRole] = useState<UserRole>(user.role);
@@ -154,60 +150,52 @@ function UserRow({
         p-4
       "
     >
-      <div
-        className="
-          flex
-          items-start
-          justify-between
-          gap-4
-        "
-      >
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="font-bold text-gray-900">
             {user.name || user.email}
           </h3>
-          <p className="mt-1 text-sm text-gray-600">{user.email}</p>
+
+          <p className="mt-1 text-sm text-gray-600">
+            {user.email}
+          </p>
+
+          <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-500">
+            <span>{user.role}</span>
+            <span>•</span>
+            <span>Review items: {user.learningWordsCount}</span>
+            <span>•</span>
+            <span>Own words: {user.personalWordsCount}</span>
+            {isCurrentUser ? (
+              <>
+                <span>•</span>
+                <span>Current user</span>
+              </>
+            ) : null}
+          </div>
         </div>
 
         <span
-          className="
+          className={`
             rounded-full
-            bg-white
             px-3
             py-1
             text-xs
             font-medium
-            text-gray-600
-          "
+            ${
+              user.isActive
+                ? "bg-white text-emerald-700"
+                : "bg-red-50 text-red-600"
+            }
+          `}
         >
           {user.isActive ? "Active" : "Inactive"}
         </span>
       </div>
 
-      <div
-        className="
-          mt-3
-          flex
-          flex-wrap
-          gap-2
-          text-xs
-          text-gray-500
-        "
-      >
-        <span>{user.role}</span>
-        <span>•</span>
-        <span>{user._count.userWords} words</span>
-        {isCurrentUser ? (
-          <>
-            <span>•</span>
-            <span>Current user</span>
-          </>
-        ) : null}
-      </div>
-
       <div className="mt-4 space-y-3">
         <div>
-          <label className="text-xs font-medium text-gray-600">Name</label>
+          <label className="text-xs text-gray-500">Name</label>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -218,8 +206,8 @@ function UserRow({
               border
               border-gray-200
               bg-white
-              px-3
-              py-2
+              px-4
+              py-3
               text-sm
               outline-none
               focus:ring-2
@@ -229,10 +217,11 @@ function UserRow({
         </div>
 
         <div>
-          <label className="text-xs font-medium text-gray-600">Role</label>
+          <label className="text-xs text-gray-500">Role</label>
           <select
             value={role}
             onChange={(event) => setRole(event.target.value as UserRole)}
+            disabled={isCurrentUser}
             className="
               mt-1
               w-full
@@ -240,12 +229,13 @@ function UserRow({
               border
               border-gray-200
               bg-white
-              px-3
-              py-2
+              px-4
+              py-3
               text-sm
               outline-none
               focus:ring-2
               focus:ring-indigo-500
+              disabled:bg-gray-100
             "
           >
             <option value="USER">USER</option>
@@ -254,9 +244,7 @@ function UserRow({
         </div>
 
         <div>
-          <label className="text-xs font-medium text-gray-600">
-            New password
-          </label>
+          <label className="text-xs text-gray-500">New password</label>
           <input
             type="password"
             value={password}
@@ -269,8 +257,8 @@ function UserRow({
               border
               border-gray-200
               bg-white
-              px-3
-              py-2
+              px-4
+              py-3
               text-sm
               outline-none
               focus:ring-2
@@ -279,41 +267,62 @@ function UserRow({
           />
         </div>
 
-        <div
-          className="
-            grid
-            grid-cols-2
-            gap-2
-          "
-        >
-          <Button
+        <div className="grid grid-cols-2 gap-3">
+          <button
             type="button"
             disabled={loading}
             onClick={() =>
-              onUpdate(user.id, {
+              onSave({
+                userId: user.id,
                 name,
                 role,
-                ...(password ? { password } : {}),
+                password,
+                isActive: user.isActive,
               })
             }
-            className="rounded-xl"
+            className="
+              rounded-xl
+              bg-indigo-600
+              px-4
+              py-3
+              text-sm
+              font-medium
+              text-white
+              hover:bg-indigo-700
+              disabled:opacity-60
+            "
           >
             {loading ? "Saving..." : "Save"}
-          </Button>
+          </button>
 
-          <Button
+          <button
             type="button"
-            variant="outline"
             disabled={loading || isCurrentUser}
             onClick={() =>
-              onUpdate(user.id, {
+              onSave({
+                userId: user.id,
+                name,
+                role,
+                password,
                 isActive: !user.isActive,
               })
             }
-            className="rounded-xl"
+            className="
+              rounded-xl
+              border
+              border-gray-300
+              bg-white
+              px-4
+              py-3
+              text-sm
+              font-medium
+              text-gray-700
+              hover:bg-gray-50
+              disabled:opacity-50
+            "
           >
             {user.isActive ? "Deactivate" : "Activate"}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

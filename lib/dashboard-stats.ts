@@ -4,13 +4,15 @@ type GetDashboardStatsInput = {
   userId: string;
 };
 
+const SESSION_WINDOW_HOURS = 6;
+
 export async function getDashboardStats({
   userId,
 }: GetDashboardStatsInput) {
   const now = new Date();
 
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
+  const windowStart = new Date(now);
+  windowStart.setHours(windowStart.getHours() - SESSION_WINDOW_HOURS);
 
   const [
     user,
@@ -46,6 +48,9 @@ export async function getDashboardStats({
     prisma.userWord.count({
       where: {
         userId,
+        g5Level: {
+          lt: 5,
+        },
         nextReviewAt: {
           lte: now,
         },
@@ -56,7 +61,7 @@ export async function getDashboardStats({
       where: {
         userId,
         reviewedAt: {
-          gte: startOfToday,
+          gte: windowStart,
         },
       },
     }),

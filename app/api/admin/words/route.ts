@@ -11,11 +11,25 @@ type CreateWordRequestBody = {
   level?: number;
 };
 
+function normalizeLevel(level: unknown) {
+  const value = Number(level);
+
+  if (!Number.isFinite(value) || value <= 1) {
+    return 1;
+  }
+
+  if (value === 2) {
+    return 2;
+  }
+
+  return 3;
+}
+
 export async function POST(request: Request) {
   try {
     const session = await getSession();
 
-    if (!session || session.user.role !== "ADMIN") {
+    if (!session) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -29,7 +43,8 @@ export async function POST(request: Request) {
     const synonyms = body.synonyms?.trim() || "";
     const antonyms = body.antonyms?.trim() || "";
     const example = body.example?.trim() || "";
-    const level = body.level ?? 0;
+    const level = normalizeLevel(body.level);
+    const isAdmin = session.user.role === "ADMIN";
 
     if (!text || !meaning) {
       return NextResponse.json(
@@ -48,6 +63,9 @@ export async function POST(request: Request) {
         antonyms,
         example,
         level,
+        isGlobal: isAdmin,
+        createdByUserId: isAdmin ? null : session.user.id,
+        source: "MANUAL",
       },
       create: {
         text,
@@ -56,39 +74,54 @@ export async function POST(request: Request) {
         antonyms,
         example,
         level,
+        isGlobal: isAdmin,
+        createdByUserId: isAdmin ? null : session.user.id,
+        source: "MANUAL",
       },
     });
 
-    const users = await prisma.user.findMany({
-      where: {
-        isActive: true,
-      },
-      select: {
-        id: true,
-      },
-    });
+    if (isAdmin) {
+      const users = await prisma.user.findMany({
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+        },
+      });
 
-    await Promise.all(
-      users.map((user) =>
-        prisma.userWord.upsert({
-          where: {
-            userId_wordId: {
-              userId: user.id,
-              wordId: word.id,
-            },
-          },
-          update: {},
-          create: {
+      if (users.length > 0) {
+        await prisma.userWord.createMany({
+          data: users.map((user) => ({
             userId: user.id,
             wordId: word.id,
             g5Level: 0,
             easeFactor: 2.5,
             interval: 0,
             nextReviewAt: new Date(),
+          })),
+          skipDuplicates: true,
+        });
+      }
+    } else {
+      await prisma.userWord.upsert({
+        where: {
+          userId_wordId: {
+            userId: session.user.id,
+            wordId: word.id,
           },
-        })
-      )
-    );
+        },
+        update: {},
+        create: {
+          userId: session.user.id,
+          wordId: word.id,
+          g5Level: 0,
+          easeFactor: 2.5,
+          interval: 0,
+          nextReviewAt: new Date(),
+        },
+      });
+    }
 
     return NextResponse.json({
       word,
@@ -97,7 +130,12 @@ export async function POST(request: Request) {
     console.error("Create word API error:", error);
 
     return NextResponse.json(
-      { error: "Something went wrong" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong",
+      },
       { status: 500 }
     );
   }

@@ -9,6 +9,19 @@ type ReviewRequestBody = {
 };
 
 const validRatings: ReviewRating[] = ["AGAIN", "HARD", "GOOD", "EASY"];
+const SESSION_WINDOW_HOURS = 6;
+
+function getSessionWindow() {
+  const now = new Date();
+  const windowStart = new Date(now);
+  windowStart.setHours(windowStart.getHours() - SESSION_WINDOW_HOURS);
+
+  return {
+    now,
+    windowStart,
+    resetAt: new Date(now.getTime() + SESSION_WINDOW_HOURS * 60 * 60 * 1000),
+  };
+}
 
 export async function POST(request: Request) {
   try {
@@ -62,6 +75,36 @@ export async function POST(request: Request) {
       );
     }
 
+    const { windowStart, resetAt } = getSessionWindow();
+
+    const reviewedInWindow = await prisma.reviewHistory.count({
+      where: {
+        userId: session.user.id,
+        reviewedAt: {
+          gte: windowStart,
+        },
+      },
+    });
+
+    const dailyGoal = userWord.user.dailyGoal || 20;
+
+    if (reviewedInWindow >= dailyGoal) {
+      return NextResponse.json(
+        {
+          error: "Daily goal completed",
+          limitReached: true,
+          progress: {
+            current: dailyGoal,
+            total: dailyGoal,
+            reviewedInWindow,
+            remaining: 0,
+            resetAt,
+          },
+        },
+        { status: 429 }
+      );
+    }
+
     const result = calculateG5Review({
       currentLevel: userWord.g5Level,
       currentInterval: userWord.interval,
@@ -111,6 +154,8 @@ export async function POST(request: Request) {
       },
     });
 
+    const nextReviewedInWindow = reviewedInWindow + 1;
+
     return NextResponse.json({
       userWord: updatedUserWord,
       review: {
@@ -120,6 +165,13 @@ export async function POST(request: Request) {
         previousInterval: userWord.interval,
         nextInterval: result.nextInterval,
         nextReviewAt: result.nextReviewAt,
+      },
+      progress: {
+        current: Math.min(nextReviewedInWindow, dailyGoal),
+        total: dailyGoal,
+        reviewedInWindow: nextReviewedInWindow,
+        remaining: Math.max(0, dailyGoal - nextReviewedInWindow),
+        resetAt,
       },
     });
   } catch (error) {
